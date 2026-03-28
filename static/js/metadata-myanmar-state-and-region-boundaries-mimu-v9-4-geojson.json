@@ -1,0 +1,15 @@
+{
+    "created": "2024-03-12T03:53:21.941477",
+    "description": "GeoJSON file. Polygons of Myanmar State and Region boundaries (Admin1), based on the latest MIMU Pcode version 9.4 . Place names from General Administration Department (GAD), are available in Myanmar Unicode. Transliteration in roman script by MIMU.",
+    "format": "GeoJSON",
+    "download_url": "https://geonode.themimu.info/geoserver/geonode/ows?service=WFS&version=1.0.0&request=GetFeature&outputFormat=application%2Fjson&typeName=geonode:mmr_polbnda_adm1_250k_mimu_1",
+    "id": "b8c163eb-9eb4-4102-979f-e1bc315b71a3",
+    "last_modified": "2023-06-18T13:35:00",
+    "metadata_modified": "2026-03-27T04:19:38.427813",
+    "microdata": false,
+    "dataset_id": "ac48fc7a-f345-4e86-863b-d069ef643f35",
+    "resource_type": "api",
+    "name": "Myanmar State and Region Boundaries MIMU v9.4 geojson",
+    "mimetype": null,
+    "size": "4.3M"
+}
