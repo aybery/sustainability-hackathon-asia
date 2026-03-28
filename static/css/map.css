@@ -1,0 +1,56 @@
+html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+}
+
+.app-column {
+    display: flex;
+    flex-direction: column;
+}
+
+#top-bar {
+    height: 80px;
+    background: #1a1a1a; /* Dark sleek header */
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 30px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    z-index: 1001;
+}
+
+#map {
+    flex-grow: 1; /* Map takes all space below header */
+    width: 100%;
+}
+
+/* Prediction Output Layout */
+#prediction-output {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+}
+
+#priority-pill {
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 1.2rem;
+    transition: background 0.3s;
+}
+
+.factors-row {
+    display: flex;
+    gap: 20px;
+    font-size: 0.9rem;
+    color: #bbb;
+}
+
+.value { font-weight: bold; color: #fff; }
+
+/* Zone Colors for the Pill */
+.zone-red { background: #ff4d4d; color: white; }
+.zone-yellow { background: #ffd93d; color: black; }
+.zone-green { background: #2ecc71; color: white; }
