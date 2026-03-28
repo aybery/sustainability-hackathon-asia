@@ -4,11 +4,11 @@ app = flask.Flask(__name__)
 
 @app.route('/') 
 def index():
-    return 'Hello, World!'
+    return flask.render_template('index.html')
 
 @app.route('/map')
 def map_page():
-    return 'This is the map page.'
+    return flask.render_template('map.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
