@@ -13,12 +13,32 @@ html, body {
     height: 80px;
     background: #1a1a1a; /* Dark sleek header */
     color: white;
-    display: flex;
     align-items: center;
-    justify-content: space-between;
+    /*justify-content: space-between;*/
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr; /* 25% Left, 50% Center, 25% Right */
     padding: 0 30px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.3);
     z-index: 1001;
+}
+
+button {
+  border: none;
+  color: rgb(0, 0, 0);
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+  border-radius: 50px;
+  font-weight: bold;
+}
+
+h1 {
+    font-family: "Verdana";
+    text-align: center;
 }
 
 #map {
@@ -26,29 +46,6 @@ html, body {
     width: 100%;
 }
 
-/* Prediction Output Layout */
-#prediction-output {
-    display: flex;
-    align-items: center;
-    gap: 40px;
-}
-
-#priority-pill {
-    padding: 8px 20px;
-    border-radius: 20px;
-    font-weight: bold;
-    font-size: 1.2rem;
-    transition: background 0.3s;
-}
-
-.factors-row {
-    display: flex;
-    gap: 20px;
-    font-size: 0.9rem;
-    color: #bbb;
-}
-
-.value { font-weight: bold; color: #fff; }
 
 /* Zone Colors for the Pill */
 .zone-red { background: #ff4d4d; color: white; }
