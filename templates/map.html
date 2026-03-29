@@ -4,71 +4,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Myanmar Flood &amp; Cholera Risk Map</title>
+    <title>FloodGuard Myanmar — Live Map</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/map.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" crossorigin="anonymous"/>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" crossorigin="anonymous"></script>
 </head>
 
 <body class="app-column">
 
     <header id="top-bar">
-        <a href="/"><button class="back-btn">← Back</button></a>
-        <h1>Myanmar Flood &amp; Cholera Risk Map</h1>
+        <a href="/" class="nav-brand-link">
+            <div class="nav-brand">
+                <div class="live-dot"></div>
+                FLOODGUARD MYANMAR
+            </div>
+        </a>
+        <h1>Live Risk Map</h1>
         <div class="header-legend">
-            <span class="legend-dot high"></span>HIGH
-            <span class="legend-dot medium"></span>MEDIUM
+            <span class="legend-dot urgent"></span>URGENT
+            <span class="legend-dot prepare"></span>PREPARE
             <span class="legend-dot low"></span>LOW
         </div>
     </header>
 
-    <div id="map-container">
-        <main id="map"></main>
+    <div id="main-layout">
 
-        <!-- Info panel shown on region click -->
-        <aside id="info-panel" class="hidden">
-            <button id="close-panel">✕</button>
-            <h2 id="panel-name">—</h2>
-            <div class="panel-badge" id="panel-badge">—</div>
-
-            <div class="panel-score-row">
-                <div class="panel-score-box">
-                    <div class="score-label">Vaccine Priority Score</div>
-                    <div class="score-value" id="panel-priority-score">—</div>
-                    <div class="score-bar-wrap"><div class="score-bar" id="panel-score-bar"></div></div>
-                </div>
+        <!-- Left sidebar: region list -->
+        <aside id="region-sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">REGIONS</div>
+                <div class="sidebar-sub" id="sidebar-counts"></div>
             </div>
-
-            <table class="panel-table">
-                <tr>
-                    <td>Flood Risk</td>
-                    <td id="panel-flood"></td>
-                </tr>
-                <tr>
-                    <td>Cholera Risk</td>
-                    <td id="panel-cholera"></td>
-                </tr>
-                <tr>
-                    <td>People Affected</td>
-                    <td id="panel-pop"></td>
-                </tr>
-                <tr>
-                    <td>Last Major Flood</td>
-                    <td id="panel-flood-date"></td>
-                </tr>
-            </table>
-
-            <p id="panel-description" class="panel-desc"></p>
+            <div class="sidebar-list" id="sidebar-list">
+                <!-- Populated by map.js -->
+            </div>
         </aside>
 
-        <!-- Floating legend -->
-        <div id="legend">
-            <div class="legend-title">Vaccine Priority</div>
-            <div class="legend-item"><span class="legend-swatch high"></span> HIGH (Score ≥ 70)</div>
-            <div class="legend-item"><span class="legend-swatch medium"></span> MEDIUM (Score 40–69)</div>
-            <div class="legend-item"><span class="legend-swatch low"></span> LOW (Score &lt; 40)</div>
-            <hr>
-            <div class="legend-item"><span class="legend-swatch no-data"></span> No data</div>
+        <div id="map-container">
+            <main id="map"></main>
+
+            <!-- Info panel shown on region click -->
+            <aside id="info-panel" class="hidden">
+                <button id="close-panel">✕</button>
+                <h2 id="panel-name">—</h2>
+                <div class="panel-badge" id="panel-badge">—</div>
+
+                <div class="panel-score-row">
+                    <div class="panel-score-box">
+                        <div class="score-label">Vaccine Priority Score</div>
+                        <div class="score-value" id="panel-priority-score">—</div>
+                        <div class="score-bar-wrap"><div class="score-bar" id="panel-score-bar"></div></div>
+                    </div>
+                </div>
+
+                <table class="panel-table">
+                    <tr><td>Action Level</td><td id="panel-action"></td></tr>
+                    <tr><td>Flood Risk</td><td id="panel-flood"></td></tr>
+                    <tr><td>Cholera Risk</td><td id="panel-cholera"></td></tr>
+                    <tr><td>Population</td><td id="panel-pop-total"></td></tr>
+                    <tr><td>At-Risk Population</td><td id="panel-pop"></td></tr>
+                    <tr><td>Cholera Cases (5yr)</td><td id="panel-chol5yr"></td></tr>
+                    <tr><td>Flood Probability</td><td id="panel-flood-prob"></td></tr>
+                    <tr><td>Vaccine Need</td><td id="panel-vax-need"></td></tr>
+                    <tr><td>Current Supply</td><td id="panel-vax-supply"></td></tr>
+                    <tr><td>Supply Gap</td><td id="panel-vax-gap"></td></tr>
+                    <tr><td>Last Major Flood</td><td id="panel-flood-date"></td></tr>
+                </table>
+
+                <p id="panel-description" class="panel-desc"></p>
+            </aside>
+
+            <!-- Floating legend -->
+            <div id="legend">
+                <div class="legend-title">Vaccine Priority</div>
+                <div class="legend-item"><span class="legend-swatch urgent"></span> URGENT (Score ≥ 77)</div>
+                <div class="legend-item"><span class="legend-swatch prepare"></span> PREPARE (Score 54–76)</div>
+                <div class="legend-item"><span class="legend-swatch low"></span> LOW (Score &lt; 54)</div>
+                <hr>
+                <div class="legend-item"><span class="legend-swatch no-data"></span> No data</div>
+            </div>
         </div>
     </div>
 
