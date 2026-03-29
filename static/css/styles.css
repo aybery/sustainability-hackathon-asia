@@ -1,7 +1,39 @@
 body {
-    color: red;
-    background-color:darkslategrey;
+    color: rgb(164, 172, 182);
+    background-color:#292730;
+    background-clip:content-box;
+    font-family: Tahoma;
+    font-weight:540;
+    
 }
 h1 {
-    font-family: "Verdana";
+    color: rgb(37, 41, 44);
+    font-family: "Helvetica";
+    font-weight:light;
+    background-color:rgb(25, 31, 80);
+    text-align:center;
+    
+ }
+ .mainH{
+    font-weight:light;
+    border-radius:7px;
+    background-image: linear-gradient(to bottom right,#697e92,#c6cdd4)
+ }
+ .banner{
+    background-color:#292730;
+ }
+
+ .btnMain {
+    justify-self:center;
+    font-weight:bolder;
+    font-size:24px;
+    background-color: rgb(100, 109, 109);
+    border:none;
+    border-radius: 5px;
+    padding: 14px 32px;
+    
+
+ }
+ a:link{
+    color:#d9d7e0;
  }
