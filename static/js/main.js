@@ -385,26 +385,11 @@ function initHome() {
   const years = ['2021', '2022', '2023', '2024', '2025'];
   const floodYrData = [168, 158, 192, 211, 229];
   const maxF = Math.max(...floodYrData);
-  document.getElementById('flood-bar-chart').innerHTML = years.map((y, i) => `
-    <div class="bar-row">
-      <div class="bar-year">${y}</div>
-      <div class="bar-track">
-        <div class="bar-fill" style="width:${floodYrData[i] / maxF * 100}%;background:linear-gradient(90deg,#1d4ed8,#0ea5e9)">${floodYrData[i]} events</div>
-      </div>
-      <div class="bar-val">${floodYrData[i]}</div>
-    </div>`).join('');
 
   // Cholera cases bar chart (2021–2025, 2025 value extrapolated)
   const cholYr = [15800, 13200, 18600, 24200, 27800];
   const maxC = Math.max(...cholYr);
-  document.getElementById('cholera-bar-chart').innerHTML = years.map((y, i) => `
-    <div class="bar-row">
-      <div class="bar-year">${y}</div>
-      <div class="bar-track">
-        <div class="bar-fill" style="width:${cholYr[i] / maxC * 100}%;background:linear-gradient(90deg,#b45309,#f59e0b)">${(cholYr[i] / 1000).toFixed(1)}K</div>
-      </div>
-      <div class="bar-val">${(cholYr[i] / 1000).toFixed(1)}K</div>
-    </div>`).join('');
+ 
 
   // Prediction summary cards (forecast + top risk regions + supply gap)
   const topRisk = [...REGIONS].sort((a, b) => b.floodProb - a.floodProb).slice(0, 3);
@@ -418,27 +403,7 @@ function initHome() {
   const predicted2026 = Math.round(intercept + slope * n);
   const pctChange = (((predicted2026 - floodYrData[4]) / floodYrData[4]) * 100).toFixed(1);
 
-  document.getElementById('predict-cards').innerHTML = `
-    <div class="predict-card danger">
-      <div class="predict-card-kicker">2026 Flood Season Forecast</div>
-      <div class="predict-card-value" style="color:var(--urgent)">~${predicted2026}</div>
-      <div class="predict-card-desc">Predicted national flood events this monsoon season. <strong style="color:var(--text)">${pctChange > 0 ? '+' : ''}${pctChange}% above 2025</strong> based on 5-year linear regression trend (2021–2025).</div>
-    </div>
-    <div class="predict-card warn">
-      <div class="predict-card-kicker">Highest Probability Regions</div>
-      <div class="predict-card-value" style="color:var(--prepare)">${topRisk.map(r => r.name.split(' ')[0]).join(', ')}</div>
-      <div class="predict-card-desc">These regions show the highest compound flood risk score, with probability of flood event exceeding ${Math.round(topRisk[0].floodProb * 100)}% this season.</div>
-    </div>
-    <div class="predict-card good">
-      <div class="predict-card-kicker">Safe Zone Regions</div>
-      <div class="predict-card-value" style="color:var(--low)">${REGIONS.filter(r => r.action === "LOW").length} regions</div>
-      <div class="predict-card-desc">Lower elevation, better drainage and lower historical flood frequency places these regions at LOW priority. Routine monitoring continues.</div>
-    </div>
-    <div class="predict-card warn" style="border-left:3px solid var(--water)">
-      <div class="predict-card-kicker">Vaccine Demand vs Supply Gap</div>
-      <div class="predict-card-value" style="color:var(--water)">${(REGIONS.reduce((s, r) => s + r.gap, 0) / 1000).toFixed(0)}K doses</div>
-      <div class="predict-card-desc">Total national vaccine shortfall across all regions. <strong style="color:var(--text)">${REGIONS.filter(r => r.gap > 0).length} regions</strong> have critical supply gaps.</div>
-    </div>`;
+
 
   // Year-by-year cholera stats strip in the burden banner
   document.getElementById('year-stats').innerHTML = years.map((y, i) => `
@@ -446,27 +411,7 @@ function initHome() {
 
   // Vaccine supply cards (sorted by largest deficit first)
   const byUrgency = [...REGIONS].sort((a, b) => b.gap - a.gap);
-  document.getElementById('supply-grid').innerHTML = byUrgency.map(r => {
-    const chipC = r.coverPct < 50 ? "chip-critical" : r.coverPct < 85 ? "chip-low" : "chip-ok";
-    const chipT = r.coverPct < 50 ? "CRITICAL SHORTAGE" : r.coverPct < 85 ? "LOW SUPPLY" : "ADEQUATE";
-    const barC  = r.coverPct < 50 ? "var(--urgent)" : r.coverPct < 85 ? "var(--prepare)" : "var(--low)";
-    return `<div class="supply-card">
-      <div class="supply-header">
-        <div><div class="supply-region">${r.name}</div><div class="supply-pop">Population: ${(r.pop / 1000000).toFixed(2)}M</div></div>
-        <div class="supply-status-chip ${chipC}">${chipT}</div>
-      </div>
-      <div class="supply-nums">
-        <div class="snum-block"><div class="snum-val" style="color:var(--water)">${(r.need / 1000).toFixed(1)}K</div><div class="snum-lbl">Needed</div></div>
-        <div class="snum-block"><div class="snum-val" style="color:${r.current_supply >= r.need ? "var(--low)" : "var(--urgent)"}">${(r.current_supply / 1000).toFixed(1)}K</div><div class="snum-lbl">In Stock</div></div>
-        <div class="snum-block"><div class="snum-val" style="color:${r.gap > 0 ? "var(--urgent)" : "var(--low)"}">${r.gap > 0 ? "−" + (r.gap / 1000).toFixed(1) + "K" : "+OK"}</div><div class="snum-lbl">${r.gap > 0 ? "Deficit" : "Surplus"}</div></div>
-      </div>
-      <div class="supply-bar">
-        <div class="supply-bar-label"><span>Supply coverage</span><span>${r.coverPct}%</span></div>
-        <div class="supply-track"><div class="supply-fill" style="width:${r.coverPct}%;background:${barC}"></div></div>
-      </div>
-      ${r.gap > 0 ? `<div class="supply-deficit"><span class="deficit-badge">DEFICIT</span> ${(r.gap / 1000).toFixed(1)}K doses needed to reach full coverage</div>` : ''}
-    </div>`;
-  }).join('');
+  
 
   // Latest news / alert items
   const news = [
@@ -485,7 +430,7 @@ function initHome() {
       <span class="news-main-tag ${mainN.tag}">${mainN.tagT}</span>
       <div class="news-main-title">${mainN.title}</div>
       <div class="news-main-body">${mainN.body}</div>
-      <div class="news-meta">${mainN.date} · FloodGuard Myanmar Intelligence</div>
+      <div class="news-meta">${mainN.date} · Predict and Protect (PaP)</div>
     </div>
     <div class="news-side">${sideN.map(n => `
       <div class="news-mini">

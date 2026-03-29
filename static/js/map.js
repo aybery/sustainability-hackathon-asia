@@ -3,6 +3,8 @@ var map = L.map('map', { zoomControl: true }).setView([20, 96.1], 6);
 map.maxZoom = 6;
 map.setMinZoom(6);
 
+
+
 // Stamen Toner tiles - English labels by default
 L.tileLayer('https://tiles.stadiamaps.com/tiles/stamen_toner_dark/{z}/{x}/{y}{r}.png', {
 //L.tileLayer('https://tiles.stadiamaps.com/tiles/stamen_toner_lite/{z}/{x}/{y}{r}.png', {
@@ -208,10 +210,12 @@ Promise.all([
 
     buildSidebar(floodData);
 
-    L.geoJSON(geojson, {
+    // 1. Assign to a variable so we can "talk" to it later
+    var geojsonLayer = L.geoJSON(geojson, {
         style: function (feature) {
             var name = feature.properties.ST;
             var d    = floodData[name];
+            // Keeps your custom regionStyle logic
             return regionStyle(d ? d.priorityScore : null, false);
         },
 
@@ -222,7 +226,7 @@ Promise.all([
             layer._regionData = d;
             layersByName[name] = layer;
 
-            // Tooltip
+            // Keeps your dynamic Tooltip
             var tooltipText = name;
             if (d) {
                 tooltipText += ' — ' + (d.action || d.vaccinePriority) + ' (Score: ' + d.priorityScore + ')';
@@ -233,7 +237,7 @@ Promise.all([
                 className: 'region-tooltip'
             });
 
-            // Hover
+            // Keeps your Hover Effects
             layer.on('mouseover', function () {
                 if (activeRegion !== name) {
                     this.setStyle({ fillOpacity: 0.75, weight: 2 });
@@ -247,13 +251,14 @@ Promise.all([
                 if (activeRegion !== name) {
                     this.setStyle(regionStyle(d ? d.priorityScore : null, false));
                 }
+
+                
             });
 
-            // Click → info panel + sidebar highlight
+            // Keeps your Click logic (Panel + Sidebar Scroll)
             layer.on('click', function () {
                 setActiveRegion(name, d);
                 showPanel(name, d);
-                // Scroll sidebar item into view
                 var sidebarItem = document.querySelector('.sidebar-item[data-region="' + name + '"]');
                 if (sidebarItem) {
                     sidebarItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -262,7 +267,21 @@ Promise.all([
         }
     }).addTo(map);
 
-    console.log('GeoJSON and flood data loaded successfully.');
+    // 2. APPLY THE BOUNDS (Added without breaking anything above)
+    if (geojsonLayer) {
+        var dataBounds = geojsonLayer.getBounds();
+        
+        // Lock the "Wall"
+        map.setMaxBounds(dataBounds.pad(0.1)); 
+        
+        // Snap the camera to Myanmar on load
+        map.fitBounds(dataBounds);
+        
+        // Prevent zooming out to see the whole world
+        map.setMinZoom(map.getBoundsZoom(dataBounds));
+    }
+
+    console.log('GeoJSON and flood data loaded successfully. All features intact.');
 }).catch(function (err) {
     console.error('Failed to load data:', err);
 });
