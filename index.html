@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FloodGuard Myanmar</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+:root {
+  --bg: #03070d;
+  --surface: #070f1a;
+  --surface2: #0b1825;
+  --border: #112233;
+  --border2: #1a3050;
+  --urgent: #ff2d2d;
+  --prepare: #f59e0b;
+  --low: #10b981;
+  --safe: #22d3ee;
+  --accent: #3b82f6;
+  --water: #0ea5e9;
+  --text: #e2eeff;
+  --text-dim: #4a6a8a;
+  --text-mid: #8aabcc;
+  --font-h: 'Bebas Neue', sans-serif;
+  --font-b: 'DM Sans', sans-serif;
+  --font-m: 'JetBrains Mono', monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--font-b);overflow-x:hidden}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--accent);border-radius:2px}
+
+/* NAV */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:1000;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 48px;
+  background:rgba(3,7,13,0.92);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+}
+.nav-brand{
+  font-family:var(--font-h);font-size:1.4rem;letter-spacing:0.1em;
+  color:var(--text);display:flex;align-items:center;gap:12px;
+}
+.nav-brand .live-dot{
+  width:8px;height:8px;border-radius:50%;background:var(--urgent);
+  animation:livepulse 1.5s ease infinite;
+}
+@keyframes livepulse{0%,100%{box-shadow:0 0 0 0 rgba(255,45,45,0.6)}50%{box-shadow:0 0 0 8px rgba(255,45,45,0)}}
+.nav-links{display:flex;gap:0}
+.nav-link{
+  font-family:var(--font-m);font-size:0.65rem;letter-spacing:0.12em;
+  text-transform:uppercase;color:var(--text-dim);text-decoration:none;
+  padding:8px 16px;border-bottom:2px solid transparent;
+  transition:color 0.2s,border-color 0.2s;cursor:pointer;
+}
+.nav-link:hover,.nav-link.active{color:var(--water);border-bottom-color:var(--water)}
+
+/* PAGE SYSTEM */
+.page{display:none}
+.page.active{display:block}
+
+/* ═══════════════════════════════
+   HERO — FLOOD IMAGERY BACKGROUND
+═══════════════════════════════ */
+#page-home{padding-top:64px}
+
+.hero{
+  position:relative;min-height:100vh;
+  display:flex;flex-direction:column;
+  justify-content:flex-end;
+  overflow:hidden;
+}
+
+/* SVG animated flood scene as background */
+.hero-scene{
+  position:absolute;inset:0;
+  background:#03070d;
+}
+.hero-scene canvas{position:absolute;inset:0;width:100%;height:100%}
+
+/* Overlay gradient for text legibility */
+.hero-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(to top, rgba(3,7,13,1) 0%, rgba(3,7,13,0.7) 40%, rgba(3,7,13,0.2) 100%);
+}
+
+.hero-content{
+  position:relative;z-index:2;
+  padding:80px 60px;
+  max-width:900px;
+}
+.hero-eyebrow{
+  font-family:var(--font-m);font-size:0.65rem;letter-spacing:0.25em;
+  text-transform:uppercase;color:var(--water);
+  margin-bottom:20px;display:flex;align-items:center;gap:10px;
+}
+.hero-eyebrow::before{content:'';width:40px;height:1px;background:var(--water)}
+.hero-title{
+  font-family:var(--font-h);
+  font-size:clamp(4rem,10vw,8.5rem);
+  line-height:0.95;letter-spacing:0.02em;
+  margin-bottom:30px;
+}
+.hero-title .t1{display:block;color:var(--text)}
+.hero-title .t2{display:block;color:var(--urgent)}
+.hero-title .t3{display:block;color:var(--water);font-size:0.6em}
+.hero-tagline{
+  font-size:1.05rem;color:var(--text-mid);line-height:1.8;
+  max-width:540px;margin-bottom:48px;
+  font-weight:300;
+}
+.hero-tagline strong{color:var(--text);font-weight:600}
+
+.hero-stats-row{
+  display:flex;gap:0;margin-bottom:48px;
+  border:1px solid var(--border2);border-radius:4px;
+  overflow:hidden;width:fit-content;
+}
+.hstat{
+  padding:18px 28px;border-right:1px solid var(--border2);
+  min-width:140px;
+}
+.hstat:last-child{border-right:none}
+.hstat-num{
+  font-family:var(--font-h);font-size:2.2rem;letter-spacing:0.05em;
+  line-height:1;
+}
+.hstat-label{font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-dim);margin-top:4px}
+
+.hero-btns{display:flex;gap:14px;flex-wrap:wrap}
+.btn-primary{
+  font-family:var(--font-h);font-size:1rem;letter-spacing:0.1em;
+  padding:14px 34px;border-radius:2px;cursor:pointer;border:none;
+  background:var(--urgent);color:#fff;
+  transition:transform 0.15s,box-shadow 0.15s;
+  box-shadow:0 4px 24px rgba(255,45,45,0.3);
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(255,45,45,0.45)}
+.btn-outline{
+  font-family:var(--font-h);font-size:1rem;letter-spacing:0.1em;
+  padding:14px 34px;border-radius:2px;cursor:pointer;
+  background:transparent;color:var(--text);
+  border:1px solid var(--border2);
+  transition:border-color 0.2s,color 0.2s;
+}
+.btn-outline:hover{border-color:var(--water);color:var(--water)}
+
+/* ── TICKER ── */
+.ticker-bar{
+  background:rgba(255,45,45,0.07);
+  border-top:1px solid rgba(255,45,45,0.15);
+  border-bottom:1px solid rgba(255,45,45,0.15);
+  padding:9px 0;overflow:hidden;position:relative;
+}
+.ticker-inner{
+  display:flex;white-space:nowrap;
+  animation:tick 50s linear infinite;
+}
+@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.tick-item{
+  font-family:var(--font-m);font-size:0.64rem;letter-spacing:0.1em;
+  text-transform:uppercase;color:var(--urgent);
+  padding:0 36px;display:flex;align-items:center;gap:10px;
+}
+.tick-sep{width:4px;height:4px;border-radius:50%;background:var(--urgent);opacity:0.5}
+
+/* ── SECTIONS ── */
+.sec{padding:96px 60px;max-width:1280px;margin:0 auto}
+.sec-full{padding:96px 60px;background:var(--surface)}
+.sec-full-inner{max-width:1280px;margin:0 auto}
+
+.sec-kicker{
+  font-family:var(--font-m);font-size:0.6rem;letter-spacing:0.22em;
+  text-transform:uppercase;color:var(--water);
+  margin-bottom:12px;
+}
+.sec-title{
+  font-family:var(--font-h);font-size:clamp(2.2rem,4vw,3.5rem);
+  letter-spacing:0.04em;line-height:1;
+  margin-bottom:16px;
+}
+.sec-sub{color:var(--text-mid);line-height:1.75;max-width:520px;margin-bottom:52px;font-size:0.95rem}
+
+/* ── PREDICTION SECTION ── */
+.prediction-layout{
+  display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start;
+}
+.predict-chart-wrap{
+  background:var(--surface2);border:1px solid var(--border2);
+  border-radius:6px;padding:28px;
+}
+.chart-title{
+  font-family:var(--font-m);font-size:0.62rem;letter-spacing:0.15em;
+  text-transform:uppercase;color:var(--text-dim);
+  margin-bottom:24px;padding-bottom:12px;border-bottom:1px solid var(--border);
+}
+.bar-chart{display:flex;flex-direction:column;gap:8px}
+.bar-row{display:flex;align-items:center;gap:12px}
+.bar-year{font-family:var(--font-m);font-size:0.65rem;color:var(--text-dim);width:36px;flex-shrink:0}
+.bar-track{flex:1;background:var(--border);border-radius:2px;height:24px;position:relative;overflow:hidden}
+.bar-fill{
+  height:100%;border-radius:2px;
+  display:flex;align-items:center;padding-left:8px;
+  font-family:var(--font-m);font-size:0.6rem;color:rgba(255,255,255,0.8);
+  transition:width 1s ease;
+}
+.bar-val{font-family:var(--font-m);font-size:0.65rem;color:var(--text-mid);width:40px;text-align:right;flex-shrink:0}
+
+.predict-right{display:flex;flex-direction:column;gap:20px}
+.predict-card{
+  background:var(--surface2);border:1px solid var(--border2);
+  border-radius:6px;padding:24px;position:relative;overflow:hidden;
+}
+.predict-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+}
+.predict-card.danger::before{background:var(--urgent)}
+.predict-card.warn::before{background:var(--prepare)}
+.predict-card.good::before{background:var(--low)}
+.predict-card-kicker{
+  font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.15em;
+  text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;
+}
+.predict-card-value{
+  font-family:var(--font-h);font-size:2rem;letter-spacing:0.05em;margin-bottom:4px;
+}
+.predict-card-desc{font-size:0.8rem;color:var(--text-mid);line-height:1.6}
+
+/* ── VACCINE SUPPLY SECTION ── */
+.supply-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;
+}
+.supply-card{
+  background:var(--surface2);border:1px solid var(--border2);
+  border-radius:6px;padding:22px;
+}
+.supply-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
+.supply-region{font-family:var(--font-h);font-size:1.1rem;letter-spacing:0.04em}
+.supply-pop{font-family:var(--font-m);font-size:0.6rem;color:var(--text-dim)}
+.supply-status-chip{
+  font-family:var(--font-m);font-size:0.55rem;letter-spacing:0.1em;
+  text-transform:uppercase;padding:4px 8px;border-radius:2px;
+}
+.chip-critical{background:rgba(255,45,45,0.15);color:var(--urgent)}
+.chip-low{background:rgba(245,158,11,0.15);color:var(--prepare)}
+.chip-ok{background:rgba(16,185,129,0.12);color:var(--low)}
+
+.supply-nums{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+.snum-block{text-align:center;background:var(--border);border-radius:3px;padding:10px 6px}
+.snum-val{font-family:var(--font-m);font-size:0.85rem;font-weight:600;margin-bottom:2px}
+.snum-lbl{font-family:var(--font-m);font-size:0.5rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim)}
+
+.supply-bar{margin-top:6px}
+.supply-bar-label{
+  display:flex;justify-content:space-between;
+  font-family:var(--font-m);font-size:0.58rem;color:var(--text-dim);
+  margin-bottom:5px;
+}
+.supply-track{background:var(--border);border-radius:2px;height:6px}
+.supply-fill{height:6px;border-radius:2px;transition:width 1s ease}
+.supply-deficit{
+  margin-top:10px;font-size:0.76rem;color:var(--text-mid);
+  display:flex;align-items:center;gap:6px;
+}
+.deficit-badge{
+  font-family:var(--font-m);font-size:0.58rem;
+  padding:2px 7px;border-radius:2px;
+  background:rgba(255,45,45,0.15);color:var(--urgent);
+}
+
+/* Suffered stats */
+.suffered-banner{
+  background:linear-gradient(135deg,rgba(255,45,45,0.08) 0%,rgba(14,165,233,0.06) 100%);
+  border:1px solid rgba(255,45,45,0.2);border-radius:6px;
+  padding:36px 40px;margin-bottom:52px;
+  display:grid;grid-template-columns:1fr 2fr;gap:40px;align-items:center;
+}
+.suffered-left .big-num{
+  font-family:var(--font-h);font-size:5rem;letter-spacing:0.02em;
+  color:var(--urgent);line-height:1;
+}
+.suffered-left .big-label{
+  font-family:var(--font-m);font-size:0.62rem;letter-spacing:0.15em;
+  text-transform:uppercase;color:var(--text-dim);margin-top:6px;
+}
+.suffered-right{font-size:0.88rem;color:var(--text-mid);line-height:1.8}
+.suffered-right strong{color:var(--text)}
+.year-stats{
+  display:flex;gap:0;margin-top:16px;
+  border:1px solid var(--border2);border-radius:3px;overflow:hidden;
+}
+.ystat{
+  flex:1;padding:10px 14px;border-right:1px solid var(--border2);
+  font-family:var(--font-m);
+}
+.ystat:last-child{border-right:none}
+.ystat-y{font-size:0.58rem;color:var(--text-dim);letter-spacing:0.1em}
+.ystat-v{font-size:0.85rem;font-weight:600;color:var(--urgent);margin-top:2px}
+
+/* ── NEWS ── */
+.news-layout{
+  display:grid;grid-template-columns:2fr 1fr;gap:28px;
+}
+.news-main{
+  background:var(--surface2);border:1px solid var(--border2);border-radius:6px;
+  padding:28px;cursor:pointer;transition:border-color 0.2s;
+}
+.news-main:hover{border-color:var(--water)}
+.news-main-tag{
+  font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.15em;
+  text-transform:uppercase;padding:4px 8px;border-radius:2px;
+  display:inline-block;margin-bottom:16px;
+}
+.tag-urgent{background:rgba(255,45,45,0.15);color:var(--urgent)}
+.tag-info{background:rgba(59,130,246,0.12);color:var(--accent)}
+.tag-update{background:rgba(245,158,11,0.12);color:var(--prepare)}
+.news-main-title{font-family:var(--font-h);font-size:1.6rem;letter-spacing:0.03em;margin-bottom:12px;line-height:1.1}
+.news-main-body{font-size:0.85rem;color:var(--text-mid);line-height:1.75;margin-bottom:16px}
+.news-meta{font-family:var(--font-m);font-size:0.6rem;color:var(--text-dim)}
+.news-side{display:flex;flex-direction:column;gap:14px}
+.news-mini{
+  background:var(--surface2);border:1px solid var(--border2);border-radius:4px;
+  padding:16px;cursor:pointer;transition:border-color 0.2s;
+}
+.news-mini:hover{border-color:var(--water)}
+.news-mini-title{font-size:0.82rem;font-weight:600;margin-bottom:6px;line-height:1.3}
+.news-mini-meta{font-family:var(--font-m);font-size:0.58rem;color:var(--text-dim)}
+
+/* ── SAFETY ── */
+.safety-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.safety-card{
+  background:var(--surface2);border:1px solid var(--border2);border-radius:4px;
+  padding:20px;border-top:3px solid transparent;
+  transition:border-top-color 0.2s,transform 0.2s;
+}
+.safety-card:hover{border-top-color:var(--water);transform:translateY(-3px)}
+.safety-icon{font-size:1.6rem;margin-bottom:10px}
+.safety-title{font-family:var(--font-h);font-size:1rem;letter-spacing:0.04em;margin-bottom:6px}
+.safety-desc{font-size:0.78rem;color:var(--text-mid);line-height:1.6}
+
+/* ── TRAVEL ── */
+.travel-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.travel-card{
+  background:var(--surface2);border:1px solid var(--border2);border-radius:4px;padding:20px;
+}
+.travel-card .t-flag{font-size:1.8rem;margin-bottom:10px}
+.travel-card .t-region{font-family:var(--font-h);font-size:1rem;letter-spacing:0.04em;margin-bottom:6px}
+.travel-card .t-chip{
+  font-family:var(--font-m);font-size:0.55rem;letter-spacing:0.1em;
+  text-transform:uppercase;padding:3px 7px;border-radius:2px;
+  display:inline-block;margin-bottom:8px;
+}
+.travel-card .t-desc{font-size:0.78rem;color:var(--text-mid);line-height:1.6}
+
+/* FOOTER */
+.footer{
+  background:var(--surface);border-top:1px solid var(--border);
+  padding:28px 60px;
+  display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:16px;
+}
+.footer-l,.footer-r{font-family:var(--font-m);font-size:0.6rem;color:var(--text-dim)}
+
+/* ═══════════════════════════════
+   MAP PAGE
+═══════════════════════════════ */
+#page-map{padding-top:64px}
+.map-wrap{
+  display:grid;
+  grid-template-columns:320px 1fr 310px;
+  height:calc(100vh - 64px);
+}
+
+/* Left sidebar */
+.map-sidebar{
+  background:var(--surface);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.sidebar-head{
+  padding:18px 16px;border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.sidebar-head-title{font-family:var(--font-h);font-size:1rem;letter-spacing:0.05em;margin-bottom:2px}
+.sidebar-head-sub{font-family:var(--font-m);font-size:0.6rem;color:var(--text-dim)}
+.sidebar-filter{
+  padding:10px 12px;border-bottom:1px solid var(--border);
+  display:flex;gap:6px;flex-shrink:0;
+}
+.filter-btn{
+  font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.08em;
+  text-transform:uppercase;padding:5px 10px;border-radius:2px;
+  border:1px solid var(--border2);background:transparent;color:var(--text-dim);
+  cursor:pointer;transition:all 0.15s;
+}
+.filter-btn.active,.filter-btn:hover{border-color:var(--water);color:var(--water);background:rgba(14,165,233,0.06)}
+.sidebar-list{overflow-y:auto;flex:1;padding:6px}
+.region-row{
+  padding:12px 10px;border-radius:3px;cursor:pointer;
+  display:flex;align-items:center;gap:10px;
+  border:1px solid transparent;transition:all 0.15s;
+}
+.region-row:hover{background:rgba(14,165,233,0.04);border-color:var(--border)}
+.region-row.sel{background:rgba(14,165,233,0.08);border-color:var(--water)}
+.rr-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.rr-info{flex:1;min-width:0}
+.rr-name{font-family:var(--font-h);font-size:0.85rem;letter-spacing:0.03em}
+.rr-sub{font-family:var(--font-m);font-size:0.55rem;color:var(--text-dim);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rr-score{font-family:var(--font-m);font-size:0.65rem;font-weight:600;flex-shrink:0}
+.rr-action{
+  font-family:var(--font-m);font-size:0.52rem;letter-spacing:0.08em;
+  text-transform:uppercase;padding:2px 6px;border-radius:2px;flex-shrink:0;
+}
+
+/* Map centre */
+.map-body{position:relative;overflow:hidden;background:#020810}
+.map-bg-grid{
+  position:absolute;inset:0;
+  background-image:linear-gradient(rgba(14,165,233,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(14,165,233,0.03) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+#leaflet-map{width:100%;height:100%;z-index:2}
+#leaflet-map .leaflet-control-container{z-index:10}
+.leaflet-control-container .leaflet-top{top:60px}
+.leaflet-tile-pane{filter:brightness(0.85) contrast(1.2)}
+.leaflet-popup-content-wrapper{background:#070f1a;border:1px solid var(--border2);border-radius:4px}
+.leaflet-popup-content{color:var(--text);font-family:var(--font-b);font-size:0.85rem}
+.leaflet-popup-tip{background:#070f1a}
+.mm-marker{width:32px;height:32px;border-radius:50%;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 2px 8px rgba(0,0,0,0.4);cursor:pointer;transition:transform 0.15s}
+.mm-marker:hover{transform:scale(1.2)}
+.mm-marker-urgent{background:var(--urgent)}.mm-marker-prepare{background:var(--prepare)}.mm-marker-low{background:var(--low)}
+
+/* Map overlays */
+.map-weather{
+  position:absolute;top:12px;left:50%;transform:translateX(-50%);
+  background:rgba(7,15,26,0.88);border:1px solid var(--border2);
+  border-radius:20px;padding:7px 20px;
+  display:flex;gap:18px;z-index:10;
+}
+.w-item{font-family:var(--font-m);font-size:0.62rem;color:var(--text-dim);display:flex;align-items:center;gap:5px}
+.map-legend-box{
+  position:absolute;bottom:16px;left:16px;
+  background:rgba(7,15,26,0.9);border:1px solid var(--border2);
+  border-radius:4px;padding:12px 16px;z-index:10;
+}
+.legend-head{font-family:var(--font-m);font-size:0.56rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-dim);margin-bottom:10px}
+.legend-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:0.72rem}
+.leg-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.map-zoom-ctrl{
+  position:absolute;bottom:16px;right:16px;
+  display:flex;flex-direction:column;gap:6px;z-index:10;
+}
+.z-btn{
+  width:34px;height:34px;border-radius:3px;
+  background:rgba(7,15,26,0.9);border:1px solid var(--border2);
+  color:var(--text);cursor:pointer;font-size:1rem;
+  display:flex;align-items:center;justify-content:center;
+  transition:border-color 0.15s;
+}
+.z-btn:hover{border-color:var(--water)}
+
+/* Tooltip */
+.m-tt{
+  position:absolute;z-index:20;
+  background:rgba(7,15,26,0.96);border:1px solid var(--border2);
+  border-radius:3px;padding:10px 14px;
+  pointer-events:none;opacity:0;transition:opacity 0.12s;white-space:nowrap;
+}
+.tt-name{font-family:var(--font-h);font-size:0.85rem;letter-spacing:0.04em;margin-bottom:3px}
+.tt-info{font-family:var(--font-m);font-size:0.6rem;color:var(--text-dim)}
+
+/* Right detail panel */
+.map-detail{
+  background:var(--surface);border-left:1px solid var(--border);
+  overflow-y:auto;
+}
+.detail-empty{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:100%;text-align:center;padding:30px;
+}
+.detail-empty .de-icon{font-size:2.8rem;margin-bottom:14px;opacity:0.25}
+.detail-empty p{font-size:0.82rem;color:var(--text-dim);line-height:1.7}
+.detail-content{padding:20px}
+.detail-rgn-name{font-family:var(--font-h);font-size:1.5rem;letter-spacing:0.04em;margin-bottom:2px}
+.detail-rgn-sub{font-family:var(--font-m);font-size:0.58rem;color:var(--text-dim);margin-bottom:16px}
+
+.verdict{
+  border-radius:4px;padding:14px 16px;text-align:center;margin-bottom:20px;
+}
+.verdict.urgent{background:rgba(255,45,45,0.1);border:1px solid rgba(255,45,45,0.25)}
+.verdict.prepare{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25)}
+.verdict.low{background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.2)}
+.verdict-ico{font-size:1.6rem;margin-bottom:4px}
+.verdict-txt{font-family:var(--font-h);font-size:1rem;letter-spacing:0.06em}
+.verdict-score{font-family:var(--font-m);font-size:0.6rem;color:var(--text-dim);margin-top:4px}
+
+.d-section{margin-bottom:20px}
+.d-section-title{
+  font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.15em;
+  text-transform:uppercase;color:var(--text-dim);
+  padding-bottom:8px;border-bottom:1px solid var(--border);margin-bottom:12px;
+}
+.score-line{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.score-lbl{font-size:0.78rem;color:var(--text-mid)}
+.score-num{font-family:var(--font-m);font-size:0.78rem;font-weight:600}
+.score-track{background:var(--border);border-radius:2px;height:4px;margin-bottom:12px}
+.score-fill{height:4px;border-radius:2px;transition:width 0.8s ease}
+
+.flood-pred-box{
+  border-radius:3px;padding:12px;margin-bottom:16px;
+  font-size:0.78rem;line-height:1.6;
+}
+.fpb-urgent{background:rgba(255,45,45,0.1);border:1px solid rgba(255,45,45,0.2);color:var(--text-mid)}
+.fpb-warn{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);color:var(--text-mid)}
+.fpb-safe{background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.2);color:var(--text-mid)}
+
+.vaccine-supply-mini{
+  background:var(--surface2);border:1px solid var(--border2);
+  border-radius:4px;padding:14px;margin-bottom:16px;
+}
+.vsm-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+.vsm-cell{text-align:center}
+.vsm-val{font-family:var(--font-m);font-size:0.8rem;font-weight:600;margin-bottom:2px}
+.vsm-lbl{font-family:var(--font-m);font-size:0.5rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-dim)}
+
+.factor-tbl{width:100%;border-collapse:collapse;font-size:0.72rem}
+.factor-tbl td{padding:5px 0;border-bottom:1px solid rgba(17,34,51,0.8);vertical-align:top}
+.factor-tbl td:first-child{color:var(--text-dim);width:58%}
+.factor-tbl td:last-child{font-family:var(--font-m);font-size:0.65rem;text-align:right}
+
+.action-box{
+  border-radius:3px;padding:14px;font-size:0.78rem;
+  color:var(--text-mid);line-height:1.7;
+}
+.ab-urgent{background:rgba(255,45,45,0.06);border:1px solid rgba(255,45,45,0.15)}
+.ab-prepare{background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.15)}
+.ab-low{background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.15)}
+
+@media(max-width:900px){
+  .map-wrap{grid-template-columns:1fr;grid-template-rows:auto;height:auto}
+  .map-body{height:70vw;min-height:300px}
+  .map-sidebar,.map-detail{height:50vh}
+  .hero-content{padding:40px 24px}
+  .hero-stats-row{flex-wrap:wrap}
+  nav{padding:12px 20px}
+  .nav-links{display:none}
+  .sec,.sec-full{padding:60px 24px}
+  .prediction-layout{grid-template-columns:1fr}
+  .news-layout{grid-template-columns:1fr}
+  .suffered-banner{grid-template-columns:1fr}
+  .footer{padding:20px 24px}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">
+    <div class="live-dot"></div>
+    FLOODGUARD MYANMAR
+  </div>
+  <div class="nav-links">
+    <span class="nav-link active" onclick="showPage('home',this)">Overview</span>
+    <span class="nav-link" onclick="showPage('map',this)">Live Map</span>
+    <span class="nav-link" onclick="scrollTo2('predict')">Prediction</span>
+    <span class="nav-link" onclick="scrollTo2('vaccines')">Vaccines</span>
+    <span class="nav-link" onclick="scrollTo2('safety')">Safety</span>
+  </div>
+</nav>
+
+<!-- ══════════════════════════
+     HOME PAGE
+══════════════════════════ -->
+<div id="page-home" class="page active">
+
+  <!-- HERO with animated flood scene -->
+  <section class="hero">
+    <div class="hero-scene">
+      <canvas id="flood-canvas"></canvas>
+    </div>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <div class="hero-eyebrow">Flood Intelligence & Vaccine Prioritisation</div>
+      <h1 class="hero-title">
+        <span class="t1">WE CAN'T</span>
+        <span class="t2">STOP FLOODS.</span>
+        <span class="t3">But we can be ready.</span>
+      </h1>
+      <p class="hero-tagline">
+        For the last 5 years, floods have devastated Myanmar communities.
+        <strong>Cholera follows water.</strong> Our system predicts where the next flood will strike,
+        how many people need vaccines, and whether supply is enough —
+        <strong>before the water rises.</strong>
+      </p>
+      <div class="hero-stats-row" id="hero-stats"></div>
+      <div class="hero-btns">
+        <button class="btn-primary" onclick="showPage('map', document.querySelector('.nav-link:nth-child(2)'))">Open Live Map →</button>
+        <button class="btn-outline" onclick="scrollTo2('predict')">View 5-Year Data</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- TICKER -->
+  <div class="ticker-bar">
+    <div class="ticker-inner" id="ticker-inner"></div>
+  </div>
+
+  <!-- ── PREDICTION SECTION ── -->
+  <div class="sec" id="predict">
+    <div class="sec-kicker">5-Year Flood Intelligence</div>
+    <div class="sec-title">FLOOD PREDICTION<br>& RISK FORECAST</div>
+    <p class="sec-sub">Based on historical flood data (2021–2025), our model identifies which regions face the highest risk this season and predicts flood probability for the year ahead.</p>
+
+    <div class="prediction-layout">
+      <div>
+        <div class="predict-chart-wrap">
+          <div class="chart-title">National Flood Events — Last 5 Years</div>
+          <div class="bar-chart" id="flood-bar-chart"></div>
+        </div>
+        <div class="predict-chart-wrap" style="margin-top:20px">
+          <div class="chart-title">Cholera Cases Linked to Flooding — Last 5 Years</div>
+          <div class="bar-chart" id="cholera-bar-chart"></div>
+        </div>
+      </div>
+      <div class="predict-right" id="predict-cards"></div>
+    </div>
+  </div>
+
+  <!-- ── VACCINE SUPPLY SECTION ── -->
+  <div class="sec-full" id="vaccines">
+    <div class="sec-full-inner">
+      <div class="sec-kicker">Vaccine Logistics</div>
+      <div class="sec-title">SUPPLY vs DEMAND</div>
+      <p class="sec-sub">Based on population, flood risk and historical cholera burden, each region has a calculated vaccine need. Current supply shortfalls are flagged for urgent procurement.</p>
+
+      <div class="suffered-banner">
+        <div class="suffered-left">
+          <div class="big-num" id="suffered-total">84,200</div>
+          <div class="big-label">People affected by cholera<br>linked to flooding (2021–2025)</div>
+        </div>
+        <div class="suffered-right">
+          <strong>Insufficient vaccine coverage</strong> during flood events has repeatedly allowed cholera to spread unchecked in Myanmar's most vulnerable regions. The Ayeyarwady Delta, Rakhine Coast, and Mon State have seen the highest burden.<br><br>
+          Our system calculates the <strong>minimum vaccine doses needed</strong> per region based on at-risk population, flood probability, and past outbreak frequency.
+          <div class="year-stats" id="year-stats"></div>
+        </div>
+      </div>
+
+      <div class="supply-grid" id="supply-grid"></div>
+    </div>
+  </div>
+
+  <!-- ── NEWS ── -->
+  <div class="sec" id="news">
+    <div class="sec-kicker">Latest Alerts</div>
+    <div class="sec-title">RECENT NEWS & ALERTS</div>
+    <div class="news-layout" id="news-layout"></div>
+  </div>
+
+  <!-- ── SAFETY ── -->
+  <div class="sec-full" id="safety" style="background:var(--surface2)">
+    <div class="sec-full-inner">
+      <div class="sec-kicker">Public Information</div>
+      <div class="sec-title">HOW TO STAY SAFE</div>
+      <p class="sec-sub">Essential guidance for residents in flood-affected regions. Share this with your community.</p>
+      <div class="safety-grid" id="safety-grid"></div>
+    </div>
+  </div>
+
+  <!-- ── TRAVEL ── -->
+  <div class="sec" id="travel">
+    <div class="sec-kicker">For Travellers</div>
+    <div class="sec-title">TRAVEL ADVISORY</div>
+    <p class="sec-sub">Current risk levels by region. Always verify with official government sources before travel.</p>
+    <div class="travel-grid" id="travel-grid"></div>
+  </div>
+
+  <div class="footer">
+    <div class="footer-l">© 2025 FloodGuard Myanmar — Hackathon Project · Model v2.4 · 15 regions</div>
+    <div class="footer-r">Data refreshes every 6 hours · Last updated: <span id="last-updated"></span></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════
+     MAP PAGE
+══════════════════════════ -->
+<div id="page-map" class="page">
+  <div class="map-wrap">
+    <!-- Left list -->
+    <div class="map-sidebar">
+      <div class="sidebar-head">
+        <div class="sidebar-head-title">All Regions</div>
+        <div class="sidebar-head-sub">15 regions monitored · Click to inspect</div>
+      </div>
+      <div class="sidebar-filter">
+        <button class="filter-btn active" onclick="filterRegions('all',this)">All</button>
+        <button class="filter-btn" onclick="filterRegions('URGENT',this)">Urgent</button>
+        <button class="filter-btn" onclick="filterRegions('PREPARE',this)">Prepare</button>
+        <button class="filter-btn" onclick="filterRegions('LOW',this)">Safe</button>
+      </div>
+      <div class="sidebar-list" id="sidebar-list"></div>
+    </div>
+
+    <!-- Map -->
+    <div class="map-body" id="map-body">
+      <div id="leaflet-map"></div>
+      <div class="map-weather">
+        <div class="w-item">🌧 Monsoon Active</div>
+        <div class="w-item">💧 River +18% avg</div>
+        <div class="w-item">🌡 32°C</div>
+        <div class="w-item">💨 87% Humidity</div>
+      </div>
+      <div class="map-legend-box">
+        <div class="legend-head">Priority Level</div>
+        <div class="legend-row"><div class="leg-dot" style="background:var(--urgent)"></div>Urgent Response</div>
+        <div class="legend-row"><div class="leg-dot" style="background:var(--prepare)"></div>Prepare Response</div>
+        <div class="legend-row"><div class="leg-dot" style="background:var(--low)"></div>Low Priority / Safe</div>
+      </div>
+      <div class="map-zoom-ctrl">
+        <button class="z-btn" id="zoom-in">+</button>
+        <button class="z-btn" id="zoom-out">−</button>
+        <button class="z-btn" id="zoom-reset" title="Reset">⊙</button>
+      </div>
+      <div class="m-tt" id="m-tt">
+        <div class="tt-name" id="tt-n"></div>
+        <div class="tt-info" id="tt-i"></div>
+      </div>
+    </div>
+
+    <!-- Right detail -->
+    <div class="map-detail" id="map-detail">
+      <div class="detail-empty">
+        <div class="de-icon">🗺</div>
+        <p>Select a region on the map or from the list to view flood prediction, risk scores, and vaccine supply status.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// SCORING ENGINE (from untitled0.py)
+// ═══════════════════════════════════════════════════════
+const SM = {
+  hist_flood:{"High":4,"Medium":2,"Low":1},
+  rain_int:{"High":4,"Medium":3},
+  rain_dur:{"Long":4,"Moderate":3},
+  s_moist:{"High":4,"Medium":3},
+  riv_flow:{"High":5,"Medium":3},
+  elev:{"Low":5,"High":1},
+  slope:{"Flat":5,"Steep":1},
+  drain:{"Poor":5,"Moderate":3},
+  urban:{"High":4,"Medium":2},
+  veg:{"High":2,"Medium":3},
+  chol_hist:{"High":4,"Medium":3,"Low":1},
+  wq:{"Poor":4,"Variable":3,"Good":2},
+  sanit:{"Poor":4,"Variable":3,"Moderate":3},
+  cw:{"Limited":4,"Moderate":3,"Good":2},
+  temp:{"Tropical":3,"Temperate":1},
+  pop:{"High":4,"Medium":3,"Low":2},
+  t_out:{"Recent":4,"Unknown":2,"Long ago":1},
+  hcov:{"Low":4,"Moderate":3,"High":2},
+  mob:{"High":4,"Medium":3},
+  vup:{"Low":4,"Moderate":3,"High":2},
+  fsev:{"High":4,"Medium":3,"Low":2},
+  cpro:{"High":4,"Medium":3,"Low":2},
+  acc:{"Low":1,"Medium":3,"High":5},
+  vuln:{"High":4,"Medium":3,"Low":2},
+  cold:{"Poor":4,"Moderate":3,"Good":2},
+  disp:{"High":4,"Medium":3,"Low":2},
+  spd:{"High":4,"Medium":3}
+};
+const mv=(v,m,d=3)=>m[v]!==undefined?m[v]:d;
+
+function floodScore(r){
+  return mv(r.hist_flood,SM.hist_flood)+mv(r.rain_int,SM.rain_int)+mv(r.rain_dur,SM.rain_dur)+
+         mv(r.s_moist,SM.s_moist)+mv(r.riv_flow,SM.riv_flow)+mv(r.elev,SM.elev)+
+         mv(r.slope,SM.slope)+mv(r.drain,SM.drain)+mv(r.urban,SM.urban)+mv(r.veg,SM.veg);
+}
+function choleraScore(r){
+  return mv(r.chol_hist,SM.chol_hist)+mv(r.wq,SM.wq)+mv(r.sanit,SM.sanit)+
+         mv(r.cw,SM.cw)+mv(r.temp,SM.temp)+mv(r.pop,SM.pop)+mv(r.t_out,SM.t_out)+
+         mv(r.hcov,SM.hcov)+mv(r.mob,SM.mob);
+}
+function vaccineScore(r,fs,cs){
+  return fs+cs+mv(r.fsev,SM.fsev)+mv(r.cpro,SM.cpro)+mv(r.pop,SM.pop)+
+         mv(r.acc,SM.acc)+mv(r.cold,SM.cold)+mv(r.vuln,SM.vuln)+
+         mv(r.disp,SM.disp)+mv(r.spd,SM.spd)+mv(r.vup,SM.vup);
+}
+function classify(s){return s>=77?"URGENT":s>=54?"PREPARE":"LOW"}
+
+// ═══════════════════════════════════════════════════════
+// FLOOD PREDICTION — Linear regression on 5-year trend → 2026 forecast
+// ═══════════════════════════════════════════════════════
+function linearTrend(data) {
+  const n = data.length;
+  const xMean = (n-1)/2;
+  const yMean = data.reduce((a,b)=>a+b,0)/n;
+  const slope = data.reduce((s,y,i)=>s+(i-xMean)*(y-yMean),0) / data.reduce((s,_,i)=>s+(i-xMean)**2,0);
+  const intercept = yMean - slope*xMean;
+  return { slope, intercept, next: intercept + slope*n };
+}
+function predictFloodProb(histFlood, floodSc, fs_norm, flood5yr){
+  // Base from historical classification
+  const base = histFlood==="High"?0.78:histFlood==="Medium"?0.52:0.28;
+  // Trend boost: rising slope → higher probability
+  const trend = linearTrend(flood5yr || []);
+  const trendBoost = flood5yr ? Math.min(0.15, Math.max(-0.15, (trend.slope / Math.max(trend.next,1)) * 2)) : 0;
+  const scoreBoost = (fs_norm - 0.5) * 0.3;
+  return Math.min(0.98, Math.max(0.05, base + scoreBoost + trendBoost));
+}
+
+// ═══════════════════════════════════════════════════════
+// DATASET — Myanmar regions with population + 5yr history
+// ► EDIT these values to match your actual Excel data
+// ═══════════════════════════════════════════════════════
+const RAW = [
+  {id:"kachin",      name:"Kachin State",
+   pop:1689000, chol5yr:3200, flood5yr:[11,9,14,12,14], vaccine_need_factor:0.14,
+   current_supply:9800, vaccines_allocated:12600,
+   hist_flood:"Medium",rain_int:"Medium",rain_dur:"Moderate",s_moist:"Medium",riv_flow:"Medium",
+   elev:"High",slope:"Steep",drain:"Moderate",urban:"Medium",veg:"High",
+   chol_hist:"Medium",wq:"Variable",sanit:"Variable",cw:"Moderate",temp:"Temperate",
+   pop_d:"Medium",t_out:"Unknown",hcov:"Moderate",mob:"Medium",
+   fsev:"Medium",cpro:"Medium",acc:"Low",vuln:"Medium",cold:"Moderate",disp:"Medium",spd:"Medium",vup:"Moderate"},
+  {id:"sagaing",     name:"Sagaing Region",
+   pop:5325000, chol5yr:11400, flood5yr:[28,31,26,35,38], vaccine_need_factor:0.21,
+   current_supply:28000, vaccines_allocated:55000,
+   hist_flood:"High",rain_int:"High",rain_dur:"Long",s_moist:"High",riv_flow:"High",
+   elev:"Low",slope:"Flat",drain:"Poor",urban:"Medium",veg:"Medium",
+   chol_hist:"Medium",wq:"Variable",sanit:"Variable",cw:"Moderate",temp:"Tropical",
+   pop_d:"High",t_out:"Unknown",hcov:"Moderate",mob:"Medium",
+   fsev:"High",cpro:"Medium",acc:"Low",vuln:"Medium",cold:"Moderate",disp:"High",spd:"High",vup:"Moderate"},
+  {id:"chin",        name:"Chin State",
+   pop:478000, chol5yr:420, flood5yr:[2,4,3,5,5], vaccine_need_factor:0.08,
+   current_supply:4200, vaccines_allocated:3500,
+   hist_flood:"Low",rain_int:"Medium",rain_dur:"Moderate",s_moist:"Medium",riv_flow:"Medium",
+   elev:"High",slope:"Steep",drain:"Moderate",urban:"Medium",veg:"High",
+   chol_hist:"Medium",wq:"Variable",sanit:"Variable",cw:"Moderate",temp:"Temperate",
+   pop_d:"Low",t_out:"Unknown",hcov:"Moderate",mob:"Medium",
+   fsev:"Medium",cpro:"Medium",acc:"Low",vuln:"Medium",cold:"Moderate",disp:"Low",spd:"Medium",vup:"Moderate"},
+  {id:"mandalay",    name:"Mandalay Region",
+   pop:6165000, chol5yr:8900, flood5yr:[18,16,22,19,22], vaccine_need_factor:0.12,
+   current_supply:52000, vaccines_allocated:60000,
+   hist_flood:"Medium",rain_int:"Medium",rain_dur:"Moderate",s_moist:"Medium",riv_flow:"Medium",
+   elev:"Low",slope:"Flat",drain:"Moderate",urban:"High",veg:"Medium",
+   chol_hist:"Medium",wq:"Variable",sanit:"Variable",cw:"Moderate",temp:"Tropical",
+   pop_d:"High",t_out:"Unknown",hcov:"Moderate",mob:"Medium",
+   fsev:"Medium",cpro:"Medium",acc:"High",vuln:"Medium",cold:"Moderate",disp:"Medium",spd:"High",vup:"Moderate"},
+  {id:"shan",        name:"Shan State",
+   pop:5820000, chol5yr:6800, flood5yr:[20,18,25,23,26], vaccine_need_factor:0.13,
+   current_supply:31000, vaccines_allocated:51000,
+   hist_flood:"Medium",rain_int:"High",rain_dur:"Long",s_moist:"High",riv_flow:"High",
+   elev:"High",slope:"Steep",drain:"Moderate",urban:"Medium",veg:"High",
+   chol_hist:"Medium",wq:"Variable",sanit:"Variable",cw:"Moderate",temp:"Temperate",
+   pop_d:"Medium",t_out:"Unknown",hcov:"Moderate",mob:"Medium",
+   fsev:"Medium",cpro:"Medium",acc:"Low",vuln:"Medium",cold:"Moderate",disp:"Medium",spd:"Medium",vup:"Moderate"},
+  {id:"kayah",       name:"Kayah State",
+   pop:286000, chol5yr:310, flood5yr:[3,2,4,3,4], vaccine_need_factor:0.07,
+   current_supply:2800, vaccines_allocated:2200,
+   hist_flood:"Low",rain_int:"Medium",rain_dur:"Moderate",s_moist:"Medium",riv_flow:"Medium",
+   elev:"High",slope:"Steep",drain:"Moderate",urban:"Medium",veg:"High",
+   chol_hist:"Medium",wq:"Variable",sanit:"Variable",cw:"Moderate",temp:"Tropical",
+   pop_d:"Low",t_out:"Unknown",hcov:"Moderate",mob:"Medium",
+   fsev:"Medium",cpro:"Medium",acc:"Low",vuln:"Medium",cold:"Moderate",disp:"Medium",spd:"Medium",vup:"Moderate"},
+  {id:"kayin",       name:"Kayin State",
+   pop:1574000, chol5yr:5200, flood5yr:[22,25,20,28,30], vaccine_need_factor:0.18,
+   current_supply:12000, vaccines_allocated:25000,
+   hist_flood:"High",rain_int:"High",rain_dur:"Long",s_moist:"High",riv_flow:"High",
+   elev:"Low",slope:"Flat",drain:"Poor",urban:"Medium",veg:"Medium",
+   chol_hist:"Medium",wq:"Variable",sanit:"Variable",cw:"Moderate",temp:"Tropical",
+   pop_d:"Medium",t_out:"Unknown",hcov:"Moderate",mob:"Medium",
+   fsev:"High",cpro:"Medium",acc:"Low",vuln:"Medium",cold:"Moderate",disp:"High",spd:"High",vup:"Moderate"},
+  {id:"bago",        name:"Bago Region",
+   pop:4867000, chol5yr:9800, flood5yr:[30,28,36,34,37], vaccine_need_factor:0.19,
+   current_supply:38000, vaccines_allocated:58000,
+   hist_flood:"High",rain_int:"High",rain_dur:"Long",s_moist:"High",riv_flow:"High",
+   elev:"Low",slope:"Flat",drain:"Poor",urban:"High",veg:"Medium",
+   chol_hist:"Medium",wq:"Variable",sanit:"Variable",cw:"Moderate",temp:"Tropical",
+   pop_d:"High",t_out:"Unknown",hcov:"Moderate",mob:"Medium",
+   fsev:"High",cpro:"Medium",acc:"High",vuln:"Medium",cold:"Moderate",disp:"Medium",spd:"High",vup:"Moderate"},
+  {id:"magway",      name:"Magway Region",
+   pop:3913000, chol5yr:4400, flood5yr:[12,11,15,14,15], vaccine_need_factor:0.11,
+   current_supply:34000, vaccines_allocated:36000,
+   hist_flood:"Medium",rain_int:"Medium",rain_dur:"Moderate",s_moist:"Medium",riv_flow:"Medium",
+   elev:"Low",slope:"Flat",drain:"Moderate",urban:"Medium",veg:"Medium",
+   chol_hist:"Medium",wq:"Variable",sanit:"Variable",cw:"Moderate",temp:"Tropical",
+   pop_d:"Medium",t_out:"Unknown",hcov:"Moderate",mob:"Medium",
+   fsev:"Medium",cpro:"Medium",acc:"High",vuln:"Medium",cold:"Moderate",disp:"Medium",spd:"Medium",vup:"Moderate"},
+  {id:"mon",         name:"Mon State",
+   pop:2054000, chol5yr:7600, flood5yr:[32,35,30,38,40], vaccine_need_factor:0.2,
+   current_supply:18000, vaccines_allocated:34000,
+   hist_flood:"High",rain_int:"High",rain_dur:"Long",s_moist:"High",riv_flow:"High",
+   elev:"Low",slope:"Flat",drain:"Poor",urban:"High",veg:"Medium",
+   chol_hist:"Medium",wq:"Variable",sanit:"Variable",cw:"Moderate",temp:"Tropical",
+   pop_d:"High",t_out:"Unknown",hcov:"Moderate",mob:"Medium",
+   fsev:"High",cpro:"Medium",acc:"High",vuln:"Medium",cold:"Moderate",disp:"Medium",spd:"High",vup:"Moderate"},
+  {id:"ayeyarwady",  name:"Ayeyarwady Region",
+   pop:6184000, chol5yr:18400, flood5yr:[45,48,44,52,55], vaccine_need_factor:0.25,
+   current_supply:41000, vaccines_allocated:92000,
+   hist_flood:"High",rain_int:"High",rain_dur:"Long",s_moist:"High",riv_flow:"High",
+   elev:"Low",slope:"Flat",drain:"Poor",urban:"High",veg:"Medium",
+   chol_hist:"High",wq:"Poor",sanit:"Poor",cw:"Limited",temp:"Tropical",
+   pop_d:"High",t_out:"Recent",hcov:"Low",mob:"High",
+   fsev:"High",cpro:"High",acc:"Low",vuln:"High",cold:"Poor",disp:"High",spd:"High",vup:"Low"},
+  {id:"yangon",      name:"Yangon Region",
+   pop:7360000, chol5yr:7200, flood5yr:[22,20,26,24,27], vaccine_need_factor:0.13,
+   current_supply:88000, vaccines_allocated:80000,
+   hist_flood:"Medium",rain_int:"High",rain_dur:"Long",s_moist:"High",riv_flow:"High",
+   elev:"Low",slope:"Flat",drain:"Poor",urban:"High",veg:"Medium",
+   chol_hist:"Medium",wq:"Variable",sanit:"Variable",cw:"Moderate",temp:"Tropical",
+   pop_d:"High",t_out:"Unknown",hcov:"Moderate",mob:"High",
+   fsev:"High",cpro:"Medium",acc:"High",vuln:"Medium",cold:"Moderate",disp:"Medium",spd:"High",vup:"Moderate"},
+  {id:"tanintharyi", name:"Tanintharyi Region",
+   pop:1408000, chol5yr:4100, flood5yr:[24,22,28,30,32], vaccine_need_factor:0.17,
+   current_supply:11000, vaccines_allocated:21000,
+   hist_flood:"High",rain_int:"High",rain_dur:"Long",s_moist:"High",riv_flow:"High",
+   elev:"Low",slope:"Flat",drain:"Poor",urban:"Medium",veg:"High",
+   chol_hist:"Medium",wq:"Variable",sanit:"Variable",cw:"Moderate",temp:"Tropical",
+   pop_d:"Medium",t_out:"Unknown",hcov:"Moderate",mob:"Medium",
+   fsev:"High",cpro:"Medium",acc:"Low",vuln:"Medium",cold:"Moderate",disp:"Medium",spd:"Medium",vup:"Moderate"},
+  {id:"naypyitaw",   name:"Nay Pyi Taw",
+   pop:1160000, chol5yr:900, flood5yr:[5,4,6,5,6], vaccine_need_factor:0.08,
+   current_supply:14000, vaccines_allocated:10000,
+   hist_flood:"Low",rain_int:"Medium",rain_dur:"Moderate",s_moist:"Medium",riv_flow:"Medium",
+   elev:"Low",slope:"Flat",drain:"Moderate",urban:"Medium",veg:"Medium",
+   chol_hist:"Medium",wq:"Variable",sanit:"Variable",cw:"Moderate",temp:"Tropical",
+   pop_d:"Medium",t_out:"Unknown",hcov:"Moderate",mob:"Medium",
+   fsev:"Medium",cpro:"Medium",acc:"High",vuln:"Medium",cold:"Moderate",disp:"Low",spd:"Medium",vup:"Moderate"},
+  {id:"rakhine",     name:"Rakhine State",
+   pop:2098000, chol5yr:6200, flood5yr:[35,32,38,42,45], vaccine_need_factor:0.22,
+   current_supply:15000, vaccines_allocated:40000,
+   hist_flood:"High",rain_int:"High",rain_dur:"Long",s_moist:"High",riv_flow:"High",
+   elev:"Low",slope:"Flat",drain:"Poor",urban:"Medium",veg:"Medium",
+   chol_hist:"High",wq:"Poor",sanit:"Poor",cw:"Limited",temp:"Tropical",
+   pop_d:"High",t_out:"Recent",hcov:"Low",mob:"Medium",
+   fsev:"High",cpro:"High",acc:"Low",vuln:"High",cold:"Poor",disp:"High",spd:"High",vup:"Low"}
+];
+
+// Compute all scores
+const REGIONS = RAW.map(r=>{
+  const fs=floodScore(r), cs=choleraScore(r), vs=vaccineScore(r,fs,cs);
+  const action=classify(vs);
+  const fs_norm=fs/50;
+  const floodProb=predictFloodProb(r.hist_flood,fs,fs_norm,r.flood5yr);
+  const need=Math.round(r.pop*r.vaccine_need_factor);
+  const gap=Math.max(0,need-r.current_supply);
+  const coverPct=Math.min(100,Math.round((r.current_supply/need)*100));
+  return {...r,pop_d:r.pop_d||"Medium",fs,cs,vs,action,floodProb,need,gap,coverPct};
+});
+
+// ═══ HELPERS ═══
+const AC=(a)=>a==="URGENT"?"#ff2d2d":a==="PREPARE"?"#f59e0b":"#10b981";
+const AL=(a)=>a==="URGENT"?"☢ URGENT RESPONSE":a==="PREPARE"?"⚠️ PREPARE RESPONSE":"✓ LOW PRIORITY";
+const ACL=(a)=>a==="URGENT"?"urgent":a==="PREPARE"?"prepare":"low";
+
+// ═══ PAGE SWITCHING ═══
+function showPage(page, el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelectorAll('.nav-link').forEach(n=>n.classList.remove('active'));
+  if(el) el.classList.add('active');
+  window.scrollTo(0,0);
+  if(page==='map') initMap();
+}
+function scrollTo2(id){
+  if(!document.getElementById('page-home').classList.contains('active')){
+    showPage('home');
+    setTimeout(()=>document.getElementById(id)?.scrollIntoView({behavior:'smooth'}),200);
+  } else {
+    document.getElementById(id)?.scrollIntoView({behavior:'smooth'});
+  }
+}
+
+// ═══ FLOOD CANVAS ANIMATION ═══
+function initFloodCanvas(){
+  const canvas=document.getElementById('flood-canvas');
+  const ctx=canvas.getContext('2d');
+  let W,H,waves=[];
+  function resize(){W=canvas.width=canvas.offsetWidth;H=canvas.height=canvas.offsetHeight}
+  resize();
+  window.addEventListener('resize',resize);
+
+  // Create wave layers
+  for(let i=0;i<5;i++){
+    waves.push({
+      y:H*(0.55+i*0.08), amp:12+i*6, freq:0.008-i*0.001,
+      speed:0.3+i*0.15, phase:i*Math.PI/3,
+      color:`rgba(14,165,233,${0.04+i*0.025})`
+    });
+  }
+
+  // Rain particles
+  const drops=Array.from({length:180},()=>({
+    x:Math.random()*2000, y:Math.random()*1000,
+    len:8+Math.random()*14, speed:6+Math.random()*8,
+    opacity:0.03+Math.random()*0.08
+  }));
+
+  let t=0;
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+
+    // Dark stormy sky gradient
+    const sky=ctx.createLinearGradient(0,0,0,H);
+    sky.addColorStop(0,'#010408');
+    sky.addColorStop(0.4,'#03070f');
+    sky.addColorStop(0.7,'#050d18');
+    sky.addColorStop(1,'#071525');
+    ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
+
+    // Rain
+    ctx.save();
+    drops.forEach(d=>{
+      ctx.strokeStyle=`rgba(100,180,255,${d.opacity})`;
+      ctx.lineWidth=0.7;
+      ctx.beginPath();
+      ctx.moveTo(d.x,d.y);
+      ctx.lineTo(d.x-d.len*0.15, d.y+d.len);
+      ctx.stroke();
+      d.y+=d.speed;
+      if(d.y>H){d.y=-20;d.x=Math.random()*W}
+    });
+    ctx.restore();
+
+    // Water waves
+    waves.forEach(w=>{
+      ctx.fillStyle=w.color;
+      ctx.beginPath();
+      ctx.moveTo(0,H);
+      for(let x=0;x<=W;x+=4){
+        const y=w.y+Math.sin(x*w.freq+t*w.speed+w.phase)*w.amp;
+        ctx.lineTo(x,y);
+      }
+      ctx.lineTo(W,H); ctx.closePath(); ctx.fill();
+    });
+
+    // Submerged silhouette elements (trees, structures)
+    ctx.fillStyle='rgba(2,6,12,0.9)';
+    // Huts/structures half-submerged
+    [[60,H-80,40,50],[180,H-60,30,40],[320,H-70,50,60],[500,H-55,35,45],[680,H-75,45,55]].forEach(([x,y,w,h])=>{
+      if(x<W){
+        ctx.fillRect(x,y,w,h);
+        // Roof
+        ctx.beginPath();ctx.moveTo(x-4,y);ctx.lineTo(x+w/2,y-18);ctx.lineTo(x+w+4,y);ctx.fill();
+      }
+    });
+    // Trees
+    [[100,H-50],[260,H-60],[420,H-45],[580,H-55],[740,H-50]].forEach(([x,y])=>{
+      if(x<W){
+        ctx.fillRect(x-3,y-20,6,30);
+        ctx.beginPath();ctx.arc(x,y-30,16,0,Math.PI*2);ctx.fill();
+      }
+    });
+
+    t+=0.015;
+    requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+// ═══ HOME INIT ═══
+function initHome(){
+  initFloodCanvas();
+
+  // Hero stats
+  const urgent=REGIONS.filter(r=>r.action==="URGENT").length;
+  const prepare=REGIONS.filter(r=>r.action==="PREPARE").length;
+  const low=REGIONS.filter(r=>r.action==="LOW").length;
+  const totalChol=REGIONS.reduce((s,r)=>s+r.chol5yr,0);
+  document.getElementById('hero-stats').innerHTML=[
+    {n:urgent, l:"Urgent Regions",c:"var(--urgent)"},
+    {n:prepare, l:"Prepare Regions",c:"var(--prepare)"},
+    {n:low, l:"Safe Regions",c:"var(--low)"},
+    {n:(totalChol/1000).toFixed(0)+"K", l:"Cholera Cases (5yr)",c:"var(--text-mid)"}
+  ].map(s=>`<div class="hstat"><div class="hstat-num" style="color:${s.c}">${s.n}</div><div class="hstat-label">${s.l}</div></div>`).join('');
+
+  // Ticker
+  const ticks=REGIONS.filter(r=>r.action!=="LOW").map(r=>`<div class="tick-item"><div class="tick-sep"></div>${r.name.toUpperCase()} — ${AL(r.action)}</div>`).join('');;
+  document.getElementById('ticker-inner').innerHTML=ticks+ticks;
+
+  // Flood bar chart
+  const years=['2021','2022','2023','2024','2025'];
+  const floodYrData=[168,158,192,211,229]; // national flood events (2025 estimated via linear regression)
+  const maxF=Math.max(...floodYrData);
+  document.getElementById('flood-bar-chart').innerHTML=years.map((y,i)=>`
+    <div class="bar-row">
+      <div class="bar-year">${y}</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${(floodYrData[i]/maxF*100)}%;background:linear-gradient(90deg,#1d4ed8,#0ea5e9)">${floodYrData[i]} events</div>
+      </div>
+      <div class="bar-val">${floodYrData[i]}</div>
+    </div>`).join('');
+
+  // Cholera bar chart
+  const cholYr=[15800,13200,18600,24200,27800]; // 2021-2025 (2025 extrapolated)
+  const maxC=Math.max(...cholYr);
+  document.getElementById('cholera-bar-chart').innerHTML=years.map((y,i)=>`
+    <div class="bar-row">
+      <div class="bar-year">${y}</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${(cholYr[i]/maxC*100)}%;background:linear-gradient(90deg,#b45309,#f59e0b)">${(cholYr[i]/1000).toFixed(1)}K</div>
+      </div>
+      <div class="bar-val">${(cholYr[i]/1000).toFixed(1)}K</div>
+    </div>`).join('');
+
+  // Prediction cards
+  const topRisk=[...REGIONS].sort((a,b)=>b.floodProb-a.floodProb).slice(0,3);
+  // Linear regression over 2021-2025 to forecast 2026
+  const n = floodYrData.length;
+  const xs = floodYrData.map((_,i) => i);
+  const xMean = xs.reduce((a,b)=>a+b,0)/n;
+  const yMean = floodYrData.reduce((a,b)=>a+b,0)/n;
+  const slope = xs.reduce((s,x,i)=>s+(x-xMean)*(floodYrData[i]-yMean),0) / xs.reduce((s,x)=>s+(x-xMean)**2,0);
+  const intercept = yMean - slope*xMean;
+  const predicted2026 = Math.round(intercept + slope*n);
+  const pctChange = (((predicted2026 - floodYrData[4]) / floodYrData[4])*100).toFixed(1);
+  document.getElementById('predict-cards').innerHTML=`
+    <div class="predict-card danger">
+      <div class="predict-card-kicker">2026 Flood Season Forecast</div>
+      <div class="predict-card-value" style="color:var(--urgent)">~${predicted2026}</div>
+      <div class="predict-card-desc">Predicted national flood events this monsoon season. <strong style="color:var(--text)">${pctChange>0?'+':''}${pctChange}% above 2025</strong> based on 5-year linear regression trend (2021–2025).</div>
+    </div>
+    <div class="predict-card warn">
+      <div class="predict-card-kicker">Highest Probability Regions</div>
+      <div class="predict-card-value" style="color:var(--prepare)">${topRisk.map(r=>r.name.split(' ')[0]).join(', ')}</div>
+      <div class="predict-card-desc">These regions show the highest compound flood risk score, with probability of flood event exceeding ${Math.round(topRisk[0].floodProb*100)}% this season.</div>
+    </div>
+    <div class="predict-card good">
+      <div class="predict-card-kicker">Safe Zone Regions</div>
+      <div class="predict-card-value" style="color:var(--low)">${REGIONS.filter(r=>r.action==="LOW").length} regions</div>
+      <div class="predict-card-desc">Lower elevation, better drainage and lower historical flood frequency places these regions at LOW priority. Routine monitoring continues.</div>
+    </div>
+    <div class="predict-card warn" style="border-left:3px solid var(--water)">
+      <div class="predict-card-kicker">Vaccine Demand vs Supply Gap</div>
+      <div class="predict-card-value" style="color:var(--water)">${(REGIONS.reduce((s,r)=>s+r.gap,0)/1000).toFixed(0)}K doses</div>
+      <div class="predict-card-desc">Total national vaccine shortfall across all regions for adequate cholera outbreak protection. <strong style="color:var(--text)">${REGIONS.filter(r=>r.gap>0).length} regions</strong> have critical supply gaps.</div>
+    </div>`;
+
+  // Year stats (suffered)
+  document.getElementById('year-stats').innerHTML=years.map((y,i)=>`
+    <div class="ystat"><div class="ystat-y">${y}</div><div class="ystat-v">${(cholYr[i]/1000).toFixed(1)}K</div></div>`).join('');
+
+  // Supply grid
+  const byUrgency=[...REGIONS].sort((a,b)=>b.gap-a.gap);
+  document.getElementById('supply-grid').innerHTML=byUrgency.map(r=>{
+    const chipC=r.coverPct<50?"chip-critical":r.coverPct<85?"chip-low":"chip-ok";
+    const chipT=r.coverPct<50?"CRITICAL SHORTAGE":r.coverPct<85?"LOW SUPPLY":"ADEQUATE";
+    const barC=r.coverPct<50?"var(--urgent)":r.coverPct<85?"var(--prepare)":"var(--low)";
+    return `<div class="supply-card">
+      <div class="supply-header">
+        <div><div class="supply-region">${r.name}</div><div class="supply-pop">Population: ${(r.pop/1000000).toFixed(2)}M</div></div>
+        <div class="supply-status-chip ${chipC}">${chipT}</div>
+      </div>
+      <div class="supply-nums">
+        <div class="snum-block">
+          <div class="snum-val" style="color:var(--water)">${(r.need/1000).toFixed(1)}K</div>
+          <div class="snum-lbl">Needed</div>
+        </div>
+        <div class="snum-block">
+          <div class="snum-val" style="color:${r.current_supply>=r.need?"var(--low)":"var(--urgent)"}">${(r.current_supply/1000).toFixed(1)}K</div>
+          <div class="snum-lbl">In Stock</div>
+        </div>
+        <div class="snum-block">
+          <div class="snum-val" style="color:${r.gap>0?"var(--urgent)":"var(--low)"}">${r.gap>0?"−"+(r.gap/1000).toFixed(1)+"K":"+OK"}</div>
+          <div class="snum-lbl">${r.gap>0?"Deficit":"Surplus"}</div>
+        </div>
+      </div>
+      <div class="supply-bar">
+        <div class="supply-bar-label"><span>Supply coverage</span><span>${r.coverPct}%</span></div>
+        <div class="supply-track"><div class="supply-fill" style="width:${r.coverPct}%;background:${barC}"></div></div>
+      </div>
+      ${r.gap>0?`<div class="supply-deficit"><span class="deficit-badge">DEFICIT</span> ${(r.gap/1000).toFixed(1)}K doses needed to reach full coverage</div>`:''}
+    </div>`;}).join('');
+
+  // News
+  const news=[
+    {tag:"tag-urgent",tagT:"🔴 URGENT",main:true,title:"Ayeyarwady Delta: Worst Flooding in 5 Years",body:"River monitoring stations at Maubin and Myaungmya recorded levels 2.3m above the danger threshold. Immediate deployment of 92,000 cholera vaccine doses has been ordered. Flood probability for the region is modelled at 96% for the coming fortnight.",date:"2 hours ago"},
+    {tag:"tag-update",tagT:"⚠ UPDATE",main:false,title:"Sagaing Vaccine Pre-Positioning Complete",date:"4 hours ago"},
+    {tag:"tag-urgent",tagT:"🔴 ALERT",main:false,title:"Rakhine Cyclone Warning — Travel Suspended",date:"3 hours ago"},
+    {tag:"tag-update",tagT:"⚠ UPDATE",main:false,title:"Mon State: 34,000 doses en route",date:"8 hours ago"},
+    {tag:"tag-info",tagT:"ℹ INFO",main:false,title:"New cold-chain hub operational in Mandalay",date:"1 day ago"}
+  ];
+  const mainN=news.find(n=>n.main);
+  const sideN=news.filter(n=>!n.main);
+  document.getElementById('news-layout').innerHTML=`
+    <div class="news-main">
+      <span class="news-main-tag ${mainN.tag}">${mainN.tagT}</span>
+      <div class="news-main-title">${mainN.title}</div>
+      <div class="news-main-body">${mainN.body}</div>
+      <div class="news-meta">${mainN.date} · FloodGuard Myanmar Intelligence</div>
+    </div>
+    <div class="news-side">${sideN.map(n=>`
+      <div class="news-mini">
+        <span class="news-main-tag ${n.tag}" style="font-size:0.52rem;padding:2px 6px">${n.tagT}</span>
+        <div class="news-mini-title">${n.title}</div>
+        <div class="news-mini-meta">${n.date}</div>
+      </div>`).join('')}
+    </div>`;
+
+  // Safety
+  const safety=[
+    {icon:"🏃",title:"Evacuate Early",desc:"Leave before water enters. Don't wait for official orders if water is rising."},
+    {icon:"🚫",title:"Avoid Floodwater",desc:"Contaminated water carries cholera, typhoid and leptospirosis. Don't wade through it."},
+    {icon:"💧",title:"ORS Packets",desc:"Severe diarrhoea? Use Oral Rehydration Salts immediately and reach a health facility fast."},
+    {icon:"📦",title:"72hr Emergency Kit",desc:"Food, water, medication, documents, torch in a waterproof bag. Prepare before monsoon."},
+    {icon:"📻",title:"Monitor Alerts",desc:"Keep a battery radio. Mobile networks often fail during severe flooding."},
+    {icon:"💉",title:"Get Vaccinated",desc:"Free oral cholera vaccines at township health departments. Get protected before the season."},
+    {icon:"🩺",title:"Report Illness Clusters",desc:"Sudden diarrhoea or fever in the community? Report to health workers immediately."},
+    {icon:"🏔",title:"Move to High Ground",desc:"Know your nearest elevated evacuation point before floods start. Plan your route now."}
+  ];
+  document.getElementById('safety-grid').innerHTML=safety.map(s=>`
+    <div class="safety-card"><div class="safety-icon">${s.icon}</div><div class="safety-title">${s.title}</div><div class="safety-desc">${s.desc}</div></div>`).join('');
+
+  // Travel
+  const travel=[
+    {f:"🌊",r:"Ayeyarwady",chip:"chip-critical",ct:"DO NOT TRAVEL",d:"Severe active flooding. All access roads cut off.",color:"var(--urgent)"},
+    {f:"⛵",r:"Rakhine",chip:"chip-critical",ct:"DO NOT TRAVEL",d:"Active cyclone warning + coastal surge risk.",color:"var(--urgent)"},
+    {f:"🌿",r:"Kayin",chip:"chip-low",ct:"HIGH CAUTION",d:"Flash flood risk in river valleys. Monitor daily.",color:"var(--prepare)"},
+    {f:"🏙",r:"Yangon",chip:"chip-low",ct:"EXERCISE CAUTION",d:"Urban flooding possible in low-lying areas.",color:"var(--prepare)"},
+    {f:"🏛",r:"Mandalay",chip:"chip-ok",ct:"GENERALLY SAFE",d:"Monitor conditions. Some routes may be affected.",color:"var(--low)"},
+    {f:"🏔",r:"Chin State",chip:"chip-ok",ct:"LOW RISK",d:"Mountainous terrain. Lower flood probability.",color:"var(--low)"}
+  ];
+  document.getElementById('travel-grid').innerHTML=travel.map(t=>`
+    <div class="travel-card">
+      <div class="t-flag">${t.f}</div>
+      <div class="t-region">${t.r}</div>
+      <span class="t-chip ${t.chip}" style="color:${t.color}">${t.ct}</span>
+      <div class="t-desc">${t.d}</div>
+    </div>`).join('');
+
+  // Footer timestamp
+  document.getElementById('last-updated').textContent=new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+}
+
+// ═══ Myanmar Region Coordinates (lat, long) ═══
+const REGION_COORDS = {
+  kachin: [25.9, 97.4],
+  sagaing: [22.5, 95.3],
+  chin: [22.5, 93.5],
+  mandalay: [21.9, 96.0],
+  shan: [21.5, 98.5],
+  kayah: [19.2, 97.3],
+  kayin: [18.5, 97.5],
+  bago: [18.5, 96.0],
+  magway: [20.0, 94.5],
+  mon: [16.8, 97.8],
+  ayeyarwady: [18.5, 95.0],
+  yangon: [16.8, 96.2],
+  tanintharyi: [14.5, 98.2],
+  naypyitaw: [19.8, 96.1],
+  rakhine: [19.0, 93.3]
+};
+
+// ═══ MAP INIT ═══
+let leafletMap = null, mapMarkers = {}, selId = null;
+function initMap() {
+  if (leafletMap) return;
+  
+  // Initialize Leaflet map
+  leafletMap = L.map('leaflet-map').setView([21.5, 96], 6);
+  
+  // OpenStreetMap layer
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors',
+    maxZoom: 18,
+    minZoom: 5
+  }).addTo(leafletMap);
+  
+  // Disable zoom controls (we use custom ones)
+  leafletMap.zoomControl.remove();
+  
+  // Add markers for each region
+  REGIONS.forEach(r => {
+    if (!REGION_COORDS[r.id]) return;
+    const coords = REGION_COORDS[r.id];
+    
+    const markerClass = `mm-marker mm-marker-${r.action.toLowerCase()}`;
+    const markerHtml = `<div class="${markerClass}" title="${r.name}">📍</div>`;
+    const markerIcon = L.divIcon({
+      html: markerHtml,
+      className: '',
+      iconSize: [32, 32],
+      iconAnchor: [16, 16]
+    });
+    
+    const marker = L.marker(coords, { icon: markerIcon }).addTo(leafletMap);
+    marker.regionData = r;
+    
+    // Popup on click
+    const popupContent = `
+      <div style="font-weight:600;margin-bottom:4px">${r.name}</div>
+      <div style="font-size:0.85rem;color:#8aabcc">
+        Priority: <strong>${Math.round(r.vs/115*100)}%</strong><br>
+        Flood Risk: <strong>${Math.round(r.floodProb*100)}%</strong><br>
+        Vaccine Supply: <strong>${r.coverPct}%</strong><br>
+        Status: <strong style="color:${AC(r.action)}">${r.action}</strong>
+      </div>
+    `;
+    marker.bindPopup(popupContent, { maxWidth: 250 });
+    
+    // Click event
+    marker.on('click', () => selRegion(r.id));
+    
+    mapMarkers[r.id] = marker;
+  });
+  
+  // Custom zoom controls
+  document.getElementById('zoom-in').addEventListener('click', () => leafletMap.zoomIn());
+  document.getElementById('zoom-out').addEventListener('click', () => leafletMap.zoomOut());
+  document.getElementById('zoom-reset').addEventListener('click', () => {
+    mreset();
+    leafletMap.setView([21.5, 96], 6);
+  });
+  
+  buildSidebarList('all');
+}
+
+let sFilter='all';
+function filterRegions(f, btn){
+  sFilter=f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  buildSidebarList(f);
+}
+function buildSidebarList(f){
+  const list=f==='all'?REGIONS:REGIONS.filter(r=>r.action===f);
+  const sorted=[...list].sort((a,b)=>b.vs-a.vs);
+  document.getElementById('sidebar-list').innerHTML=sorted.map(r=>`
+    <div class="region-row${selId===r.id?" sel":""}" id="li-${r.id}" onclick="selRegion('${r.id}')">
+      <div class="rr-dot" style="background:${AC(r.action)}"></div>
+      <div class="rr-info">
+        <div class="rr-name">${r.name}</div>
+        <div class="rr-sub">Flood ${Math.round(r.floodProb*100)}% · Supply ${r.coverPct}%</div>
+      </div>
+      <div class="rr-score" style="color:${AC(r.action)}">${Math.round(r.vs/115*100)}%</div>
+      <div class="rr-action" style="background:${AC(r.action)}22;color:${AC(r.action)}">${r.action}</div>
+    </div>`).join('');
+}
+
+function selRegion(id){
+  if(selId){
+    document.getElementById('li-'+selId)?.classList.remove('sel');
+    mapMarkers[selId]?.closePopup();
+  }
+  selId=id;
+  document.getElementById('li-'+id)?.classList.add('sel');
+  
+  // Scroll sidebar to selected region
+  const regionRow = document.getElementById('li-'+id);
+  if(regionRow) regionRow.scrollIntoView({behavior:'smooth',block:'nearest'});
+
+  const r=REGIONS.find(x=>x.id===id);
+  if(!r) return;
+
+  // Focus map on region marker
+  if(mapMarkers[id]){
+    const marker = mapMarkers[id];
+    leafletMap.setView(marker.getLatLng(), 8);
+    marker.openPopup();
+  }
+
+  const ac=ACL(r.action);
+  const fpbC=r.action==="URGENT"?"fpb-urgent":r.action==="PREPARE"?"fpb-warn":"fpb-safe";
+  const abC=r.action==="URGENT"?"ab-urgent":r.action==="PREPARE"?"ab-prepare":"ab-low";
+
+  document.getElementById('map-detail').innerHTML=`<div class="detail-content">
+    <div class="detail-rgn-name">${r.name}</div>
+    <div class="detail-rgn-sub">Myanmar · ${r.pop.toLocaleString()} residents</div>
+
+    <div class="verdict ${ac}">
+      <div class="verdict-ico">${r.action==="URGENT"?"🚨":r.action==="PREPARE"?"⚠️":"✅"}</div>
+      <div class="verdict-txt" style="color:${AC(r.action)}">${AL(r.action)}</div>
+      <div class="verdict-score">Vaccine Priority Score: ${Math.round(r.vs/115*100)}%</div>
+    </div>
+
+    <div class="d-section">
+      <div class="d-section-title">Flood Prediction</div>
+      <div class="flood-pred-box ${fpbC}">
+        <strong style="color:${AC(r.action)}">Flood probability this season: ${Math.round(r.floodProb*100)}%</strong><br>
+        Based on 5-year historical data (${r.flood5yr.join(', ')} events/yr, 2021–2025), rainfall intensity, soil saturation and river flow. Trend: ${r.flood5yr[4]>r.flood5yr[0]?"📈 Worsening":"📉 Improving"}. 2026 regression forecast: ~${Math.round(linearTrend(r.flood5yr).next)} events.
+      </div>
+    </div>
+
+    <div class="d-section">
+      <div class="d-section-title">Risk Scores</div>
+      <div class="score-line"><div class="score-lbl">🌊 Flood Risk</div><div class="score-num" style="color:#60a5fa">${r.fs}/50</div></div>
+      <div class="score-track"><div class="score-fill" style="width:${r.fs/50*100}%;background:linear-gradient(90deg,#1d4ed8,#60a5fa)"></div></div>
+      <div class="score-line"><div class="score-lbl">🦠 Cholera Risk</div><div class="score-num" style="color:#fb923c">${r.cs}/45</div></div>
+      <div class="score-track"><div class="score-fill" style="width:${r.cs/45*100}%;background:linear-gradient(90deg,#c2410c,#fb923c)"></div></div>
+      <div class="score-line"><div class="score-lbl">💉 Vaccine Priority</div><div class="score-num" style="color:${AC(r.action)}">${Math.round(r.vs/115*100)}%</div></div>
+      <div class="score-track"><div class="score-fill" style="width:${r.vs/115*100}%;background:${AC(r.action)}"></div></div>
+    </div>
+
+    <div class="d-section">
+      <div class="d-section-title">Vaccine Supply Status</div>
+      <div class="vaccine-supply-mini">
+        <div class="vsm-row">
+          <div class="vsm-cell"><div class="vsm-val" style="color:var(--water)">${(r.need/1000).toFixed(1)}K</div><div class="vsm-lbl">Doses needed</div></div>
+          <div class="vsm-cell"><div class="vsm-val" style="color:${r.current_supply>=r.need?"var(--low)":"var(--urgent)"}">${(r.current_supply/1000).toFixed(1)}K</div><div class="vsm-lbl">In stock</div></div>
+          <div class="vsm-cell"><div class="vsm-val" style="color:${r.gap>0?"var(--urgent)":"var(--low)"}">${r.gap>0?"−"+(r.gap/1000).toFixed(1)+"K":"OK"}</div><div class="vsm-lbl">${r.gap>0?"Deficit":"Surplus"}</div></div>
+        </div>
+        <div class="supply-bar-label" style="font-family:var(--font-m);font-size:0.58rem;color:var(--text-dim);display:flex;justify-content:space-between;margin-bottom:5px">
+          <span>Coverage</span><span>${r.coverPct}%</span>
+        </div>
+        <div class="supply-track"><div class="supply-fill" style="width:${r.coverPct}%;background:${r.coverPct<50?"var(--urgent)":r.coverPct<85?"var(--prepare)":"var(--low)"}"></div></div>
+        <div style="font-family:var(--font-m);font-size:0.6rem;color:var(--text-dim);margin-top:8px">
+          Cholera cases (5yr): <strong style="color:var(--text)">${r.chol5yr.toLocaleString()}</strong> people
+        </div>
+      </div>
+    </div>
+
+    <div class="d-section">
+      <div class="d-section-title">Key Factors</div>
+      <table class="factor-tbl">
+        <tr><td>Historical Floods</td><td style="color:${AC(r.action)}">${r.hist_flood}</td></tr>
+        <tr><td>River Flow Level</td><td>${r.riv_flow}</td></tr>
+        <tr><td>Elevation</td><td>${r.elev}</td></tr>
+        <tr><td>Drainage Quality</td><td>${r.drain}</td></tr>
+        <tr><td>Population Density</td><td>${r.pop_d}</td></tr>
+        <tr><td>Access During Floods</td><td>${r.acc}</td></tr>
+        <tr><td>Cold Chain</td><td>${r.cold}</td></tr>
+        <tr><td>Displacement Risk</td><td>${r.disp}</td></tr>
+        <tr><td>Water Quality</td><td>${r.wq}</td></tr>
+        <tr><td>Sanitation</td><td>${r.sanit}</td></tr>
+      </table>
+    </div>
+
+    <div class="d-section">
+      <div class="d-section-title">Recommended Action</div>
+      <div class="action-box ${abC}">
+        ${r.action==="URGENT"
+          ?"🚨 <strong>Immediate deployment required.</strong> Contact regional MOH. Begin cold-chain logistics now. Prioritise children under 5 and elderly. Procurement gap: <strong>"+(r.gap/1000).toFixed(1)+"K doses</strong>. ETA target: 24–48 hours."
+          :r.action==="PREPARE"
+          ?"⚠️ <strong>Pre-position vaccines</strong> at nearest hub. Alert community health workers. Monitor river levels daily. Procurement gap: <strong>"+(r.gap>0?(r.gap/1000).toFixed(1)+"K doses":"No gap — adequate")+"</strong>. Ready for deployment within 72hrs."
+          :"✅ <strong>Routine monitoring only.</strong> Maintain standard vaccine stocks. No emergency deployment needed. Review status weekly during monsoon season."}
+      </div>
+    </div>
+  </div>`;
+}
+
+// tooltip
+function showTT(e,r){
+  const tt=document.getElementById('m-tt');
+  document.getElementById('tt-n').textContent=r.name;
+  document.getElementById('tt-i').textContent=`Priority: ${Math.round(r.vs/115*100)}% · Flood: ${Math.round(r.floodProb*100)}% · Supply: ${r.coverPct}%`;
+  const rect=document.getElementById('map-body').getBoundingClientRect();
+  tt.style.left=(e.clientX-rect.left+14)+'px';
+  tt.style.top=(e.clientY-rect.top-8)+'px';
+  tt.style.opacity='1';
+}
+function hideTT(){document.getElementById('m-tt').style.opacity='0'}
+
+// zoom
+function mreset(){
+  if(selId){
+    mapMarkers[selId]?.closePopup();
+    selId=null;
+  }
+  document.getElementById('map-detail').innerHTML='<div class="detail-empty"><div class="de-icon">🗺</div><p>Select a region on the map or from the list to view flood prediction, risk scores, and vaccine supply status.</p></div>';
+  buildSidebarList(sFilter);
+}
+
+// ═══ INIT ═══
+initHome();
+</script>
+</body>
+</html>
