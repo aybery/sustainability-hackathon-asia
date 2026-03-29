@@ -1,12 +1,16 @@
 // ── Map initialisation ──────────────────────────────────────────────────────
 var map = L.map('map', { zoomControl: true }).setView([20, 96.1], 6);
+map.maxZoom = 6;
+map.setMinZoom(6);
 
-// CartoDB Dark Matter – dark base that makes our colour overlays pop
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_matter/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors ' +
-                 '&copy; <a href="https://carto.com/attributions">CARTO</a>',
-    subdomains: 'abcd',
-    maxZoom: 18
+// Stamen Toner tiles - English labels by default
+L.tileLayer('https://tiles.stadiamaps.com/tiles/stamen_toner_dark/{z}/{x}/{y}{r}.png', {
+//L.tileLayer('https://tiles.stadiamaps.com/tiles/stamen_toner_lite/{z}/{x}/{y}{r}.png', {
+maxZoom: 6,
+attribution: '&copy; <a href="https://stadiamaps.com/" target="_blank">Stadia Maps</a> ' +
+            '&copy; <a href="https://stamen.com/" target="_blank">Stamen Design</a> ' +
+            '&copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> ' +
+            '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>',
 }).addTo(map);
 
 // ── Colour helpers ──────────────────────────────────────────────────────────
@@ -18,7 +22,7 @@ function actionColor(action) {
 }
 
 function scoreBarColor(score) {
-    if (score >= 77) return '#ef4444';
+    if (score >= 67) return '#ef4444';
     if (score >= 54) return '#f59e0b';
     return '#22c55e';
 }
@@ -30,7 +34,7 @@ function regionStyle(action, highlighted) {
         weight: highlighted ? 2.5 : 1.5,
         opacity: 0.9,
         color: highlighted ? '#ffffff' : '#1f2937',
-        fillOpacity: highlighted ? 0.85 : 0.55
+        fillOpacity: highlighted ? 0.85 : 1
     };
 }
 
