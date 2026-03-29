@@ -14,21 +14,48 @@ attribution: '&copy; <a href="https://stadiamaps.com/" target="_blank">Stadia Ma
 }).addTo(map);
 
 // ── Colour helpers ──────────────────────────────────────────────────────────
-function actionColor(action) {
-    if (action === 'URGENT')  return '#ef4444'; // red
-    if (action === 'PREPARE') return '#f59e0b'; // amber
-    if (action === 'LOW')     return '#22c55e'; // green
-    return '#64748b'; // grey – no data
+function rgbToHex(r, g, b) {
+    return '#' + [r, g, b].map(function (v) {
+        return Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0');
+    }).join('');
+}
+
+// Continuous gradient: green → yellow → orange → red → dark red
+// based on priorityScore (0–100)
+function scoreToColor(score) {
+    if (score === undefined || score === null) return '#64748b'; // grey – no data
+
+    // Control points: [score, r, g, b]
+    var stops = [
+        [0,   34, 197,  94],  // #22c55e  green
+        [54, 234, 179,   8],  // #eab308  yellow
+        [70, 249, 115,  22],  // #f97316  orange
+        [85, 239,  68,  68],  // #ef4444  red
+        [100, 153,  27,  27]  // #991b1b  dark red
+    ];
+
+    if (score <= stops[0][0]) return rgbToHex(stops[0][1], stops[0][2], stops[0][3]);
+    if (score >= stops[stops.length - 1][0]) return rgbToHex(stops[stops.length - 1][1], stops[stops.length - 1][2], stops[stops.length - 1][3]);
+
+    for (var i = 0; i < stops.length - 1; i++) {
+        if (score >= stops[i][0] && score <= stops[i + 1][0]) {
+            var t = (score - stops[i][0]) / (stops[i + 1][0] - stops[i][0]);
+            return rgbToHex(
+                stops[i][1] + t * (stops[i + 1][1] - stops[i][1]),
+                stops[i][2] + t * (stops[i + 1][2] - stops[i][2]),
+                stops[i][3] + t * (stops[i + 1][3] - stops[i][3])
+            );
+        }
+    }
+    return '#64748b';
 }
 
 function scoreBarColor(score) {
-    if (score >= 67) return '#ef4444';
-    if (score >= 54) return '#f59e0b';
-    return '#22c55e';
+    return scoreToColor(score);
 }
 
-function regionStyle(action, highlighted) {
-    var color = actionColor(action);
+function regionStyle(score, highlighted) {
+    var color = scoreToColor(score);
     return {
         fillColor: color,
         weight: highlighted ? 2.5 : 1.5,
@@ -46,11 +73,11 @@ function setActiveRegion(name, d) {
     // Reset previous
     if (activeRegion && layersByName[activeRegion]) {
         var prevData = layersByName[activeRegion]._regionData;
-        layersByName[activeRegion].setStyle(regionStyle(prevData ? prevData.action : null, false));
+        layersByName[activeRegion].setStyle(regionStyle(prevData ? prevData.priorityScore : null, false));
     }
     activeRegion = name;
     if (name && layersByName[name]) {
-        layersByName[name].setStyle(regionStyle(d ? d.action : null, true));
+        layersByName[name].setStyle(regionStyle(d ? d.priorityScore : null, true));
         layersByName[name].bringToFront();
     }
     // Update sidebar active state
@@ -185,7 +212,7 @@ Promise.all([
         style: function (feature) {
             var name = feature.properties.ST;
             var d    = floodData[name];
-            return regionStyle(d ? d.action : null, false);
+            return regionStyle(d ? d.priorityScore : null, false);
         },
 
         onEachFeature: function (feature, layer) {
@@ -218,7 +245,7 @@ Promise.all([
 
             layer.on('mouseout', function () {
                 if (activeRegion !== name) {
-                    this.setStyle(regionStyle(d ? d.action : null, false));
+                    this.setStyle(regionStyle(d ? d.priorityScore : null, false));
                 }
             });
 
