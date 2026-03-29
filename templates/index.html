@@ -4,21 +4,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sustainability Hackathon Asia</title>
+    <title>Myanmar Flood &amp; Cholera Risk Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 
 <body>
-    <h1 class = "mainH">Welcome to the Sustainability Hackathon Asia!</h1>
-    <section>
-    <p>The focus of this project is to predict the spread of Cholera in Myanmar due to flooding.</p>
-    </section>
-    <p>Our goal for this hackathon was to reliably predict the risk of cholera outbreaks from data such as the likeliness and levels of flooding in a given area in Myanmar, and from this data give a 'Vaccine Priority Score' representing the necessity and urgency of immunisation outreach to the area.</p>
-    <section>
-    <p>Click the link below to view the map.</p>
-    </section>
-    <span class = "banner"><button class="btnMain"><a href="/map">View Map</a></button></span>
-</body>
 
-<footer></footer>
+    <nav class="navbar">
+        <span class="navbar-brand">🌊 Myanmar Flood Watch</span>
+        <a href="/map" class="nav-btn">View Interactive Map →</a>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-content">
+            <h1>Myanmar Flooding &amp; Cholera Risk Dashboard</h1>
+            <p class="hero-sub">
+                Real-time flood data analysis to predict cholera outbreak risk and prioritise
+                vaccine distribution across Myanmar's states and regions.
+            </p>
+            <a href="/map" class="cta-btn">Open Interactive Map</a>
+        </div>
+    </header>
+
+    <section class="stats-bar">
+        <div class="stat-card">
+            <div class="stat-number">{{ "{:,}".format(total_affected) }}</div>
+            <div class="stat-label">People at Risk</div>
+        </div>
+        <div class="stat-card danger">
+            <div class="stat-number">{{ high_risk }}</div>
+            <div class="stat-label">High-Priority Regions</div>
+        </div>
+        <div class="stat-card warning">
+            <div class="stat-number">{{ medium_risk }}</div>
+            <div class="stat-label">Medium-Priority Regions</div>
+        </div>
+        <div class="stat-card safe">
+            <div class="stat-number">{{ low_risk }}</div>
+            <div class="stat-label">Lower-Priority Regions</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ regions }}</div>
+            <div class="stat-label">States &amp; Regions Monitored</div>
+        </div>
+    </section>
+
+    <section class="info-section">
+        <div class="info-grid">
+            <div class="info-card">
+                <div class="info-icon">🌧️</div>
+                <h3>Flood Risk Monitoring</h3>
+                <p>We analyse rainfall data, river levels, and historical flood records across all
+                   15 states and regions of Myanmar to score flood risk on a scale of 1–10.</p>
+            </div>
+            <div class="info-card">
+                <div class="info-icon">🦠</div>
+                <h3>Cholera Outbreak Prediction</h3>
+                <p>Flooding contaminates water supplies and sanitation systems, dramatically
+                   increasing cholera risk. Our model predicts outbreak probability using
+                   flood severity and population density.</p>
+            </div>
+            <div class="info-card">
+                <div class="info-icon">💉</div>
+                <h3>Vaccine Priority Score</h3>
+                <p>Each region receives a <strong>Vaccine Priority Score (0–100)</strong>
+                   combining flood risk, cholera likelihood, and affected population size,
+                   guiding immunisation outreach efforts.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="how-section">
+        <h2>How It Works</h2>
+        <ol class="steps">
+            <li><span class="step-num">1</span> Flood severity data is collected for each region from satellite and ground sensors.</li>
+            <li><span class="step-num">2</span> A cholera risk score is computed based on flood level, water quality proxies, and population density.</li>
+            <li><span class="step-num">3</span> A combined <em>Vaccine Priority Score</em> guides health authorities on where to deploy vaccines first.</li>
+            <li><span class="step-num">4</span> The interactive map displays all regions colour-coded by urgency — red (HIGH), amber (MEDIUM), green (LOW).</li>
+        </ol>
+    </section>
+
+    <div class="map-cta">
+        <a href="/map" class="cta-btn large">Explore the Interactive Map</a>
+    </div>
+
+    <footer class="footer">
+        <p>🌏 Sustainability Hackathon Asia &nbsp;|&nbsp; Myanmar Flood &amp; Cholera Risk Project</p>
+    </footer>
+
+</body>
 </html>
