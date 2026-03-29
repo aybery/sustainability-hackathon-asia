@@ -143,18 +143,7 @@ FLOOD_DATA = {
 
 @app.route('/')
 def index():
-    total_affected = sum(d['populationAffected'] for d in FLOOD_DATA.values())
-    high_risk = sum(1 for d in FLOOD_DATA.values() if d['vaccinePriority'] == 'HIGH')
-    medium_risk = sum(1 for d in FLOOD_DATA.values() if d['vaccinePriority'] == 'MEDIUM')
-    low_risk = sum(1 for d in FLOOD_DATA.values() if d['vaccinePriority'] == 'LOW')
-    return flask.render_template(
-        'index.html',
-        total_affected=total_affected,
-        high_risk=high_risk,
-        medium_risk=medium_risk,
-        low_risk=low_risk,
-        regions=len(FLOOD_DATA)
-    )
+    return flask.render_template('index.html')
 
 @app.route('/map')
 def map_page():

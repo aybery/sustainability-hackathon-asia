@@ -1,96 +1,146 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Myanmar Flood &amp; Cholera Risk Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>FloodGuard Myanmar</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+    <!-- App styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}"/>
 </head>
-
 <body>
 
-    <nav class="navbar">
-        <span class="navbar-brand">🌊 Myanmar Flood Watch</span>
-        <a href="/map" class="nav-btn">View Interactive Map →</a>
-    </nav>
-
-    <header class="hero">
-        <div class="hero-content">
-            <h1>Myanmar Flooding &amp; Cholera Risk Dashboard</h1>
-            <p class="hero-sub">
-                Real-time flood data analysis to predict cholera outbreak risk and prioritise
-                vaccine distribution across Myanmar's states and regions.
-            </p>
-            <a href="/map" class="cta-btn">Open Interactive Map</a>
-        </div>
-    </header>
-
-    <section class="stats-bar">
-        <div class="stat-card">
-            <div class="stat-number">{{ "{:,}".format(total_affected) }}</div>
-            <div class="stat-label">People at Risk</div>
-        </div>
-        <div class="stat-card danger">
-            <div class="stat-number">{{ high_risk }}</div>
-            <div class="stat-label">High-Priority Regions</div>
-        </div>
-        <div class="stat-card warning">
-            <div class="stat-number">{{ medium_risk }}</div>
-            <div class="stat-label">Medium-Priority Regions</div>
-        </div>
-        <div class="stat-card safe">
-            <div class="stat-number">{{ low_risk }}</div>
-            <div class="stat-label">Lower-Priority Regions</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number">{{ regions }}</div>
-            <div class="stat-label">States &amp; Regions Monitored</div>
-        </div>
-    </section>
-
-    <section class="info-section">
-        <div class="info-grid">
-            <div class="info-card">
-                <div class="info-icon">🌧️</div>
-                <h3>Flood Risk Monitoring</h3>
-                <p>We analyse rainfall data, river levels, and historical flood records across all
-                   15 states and regions of Myanmar to score flood risk on a scale of 1–10.</p>
-            </div>
-            <div class="info-card">
-                <div class="info-icon">🦠</div>
-                <h3>Cholera Outbreak Prediction</h3>
-                <p>Flooding contaminates water supplies and sanitation systems, dramatically
-                   increasing cholera risk. Our model predicts outbreak probability using
-                   flood severity and population density.</p>
-            </div>
-            <div class="info-card">
-                <div class="info-icon">💉</div>
-                <h3>Vaccine Priority Score</h3>
-                <p>Each region receives a <strong>Vaccine Priority Score (0–100)</strong>
-                   combining flood risk, cholera likelihood, and affected population size,
-                   guiding immunisation outreach efforts.</p>
-            </div>
-        </div>
-    </section>
-
-    <section class="how-section">
-        <h2>How It Works</h2>
-        <ol class="steps">
-            <li><span class="step-num">1</span> Flood severity data is collected for each region from satellite and ground sensors.</li>
-            <li><span class="step-num">2</span> A cholera risk score is computed based on flood level, water quality proxies, and population density.</li>
-            <li><span class="step-num">3</span> A combined <em>Vaccine Priority Score</em> guides health authorities on where to deploy vaccines first.</li>
-            <li><span class="step-num">4</span> The interactive map displays all regions colour-coded by urgency — red (HIGH), amber (MEDIUM), green (LOW).</li>
-        </ol>
-    </section>
-
-    <div class="map-cta">
-        <a href="/map" class="cta-btn large">Explore the Interactive Map</a>
+<!-- Fixed navigation bar -->
+<nav>
+    <div class="nav-brand">
+        <div class="live-dot"></div>
+        FLOODGUARD MYANMAR
     </div>
+    <div class="nav-links">
+        <a class="nav-link active" href="/">Overview</a>
+        <a class="nav-link" href="/map">Live Map</a>
+        <a class="nav-link" href="#predict" onclick="scrollToSection('predict'); return false;">Prediction</a>
+        <a class="nav-link" href="#vaccines" onclick="scrollToSection('vaccines'); return false;">Vaccines</a>
+        <a class="nav-link" href="#safety" onclick="scrollToSection('safety'); return false;">Safety</a>
+    </div>
+</nav>
 
-    <footer class="footer">
-        <p>🌏 Sustainability Hackathon Asia &nbsp;|&nbsp; Myanmar Flood &amp; Cholera Risk Project</p>
-    </footer>
+<!-- Hero section with animated canvas flood background -->
+<section class="hero">
+    <div class="hero-scene">
+        <canvas id="flood-canvas"></canvas>
+    </div>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+        <div class="hero-eyebrow">Flood Intelligence &amp; Vaccine Prioritisation</div>
+        <h1 class="hero-title">
+            <span class="t1">WE CAN'T</span>
+            <span class="t2">STOP FLOODS.</span>
+            <span class="t3">But we can be ready.</span>
+        </h1>
+        <p class="hero-tagline">
+            For the last 5 years, floods have devastated Myanmar communities.
+            <strong>Cholera follows water.</strong> Our system predicts where the next flood will strike,
+            how many people need vaccines, and whether supply is enough —
+            <strong>before the water rises.</strong>
+        </p>
+        <!-- Populated by main.js -->
+        <div class="hero-stats-row" id="hero-stats"></div>
+        <div class="hero-btns">
+            <a class="btn-primary" href="/map">Open Live Map →</a>
+            <button class="btn-outline" onclick="scrollToSection('predict')">View 5-Year Data</button>
+        </div>
+    </div>
+</section>
+
+<!-- Alert ticker (populated by main.js) -->
+<div class="ticker-bar">
+    <div class="ticker-inner" id="ticker-inner"></div>
+</div>
+
+<!-- Flood prediction & bar charts section -->
+<div class="sec" id="predict">
+    <div class="sec-kicker">5-Year Flood Intelligence</div>
+    <div class="sec-title">FLOOD PREDICTION<br>&amp; RISK FORECAST</div>
+    <p class="sec-sub">Based on historical flood data (2021–2025), our model identifies which regions face the highest risk this season and predicts flood probability for the year ahead.</p>
+
+    <div class="prediction-layout">
+        <div>
+            <div class="predict-chart-wrap">
+                <div class="chart-title">National Flood Events — Last 5 Years</div>
+                <div class="bar-chart" id="flood-bar-chart"></div>
+            </div>
+            <div class="predict-chart-wrap" style="margin-top:20px">
+                <div class="chart-title">Cholera Cases Linked to Flooding — Last 5 Years</div>
+                <div class="bar-chart" id="cholera-bar-chart"></div>
+            </div>
+        </div>
+        <!-- Prediction summary cards (populated by main.js) -->
+        <div class="predict-right" id="predict-cards"></div>
+    </div>
+</div>
+
+<!-- Vaccine supply vs demand section -->
+<div class="sec-full" id="vaccines">
+    <div class="sec-full-inner">
+        <div class="sec-kicker">Vaccine Logistics</div>
+        <div class="sec-title">SUPPLY vs DEMAND</div>
+        <p class="sec-sub">Based on population, flood risk and historical cholera burden, each region has a calculated vaccine need. Current supply shortfalls are flagged for urgent procurement.</p>
+
+        <div class="suffered-banner">
+            <div class="suffered-left">
+                <div class="big-num" id="suffered-total">84,200</div>
+                <div class="big-label">People affected by cholera<br>linked to flooding (2021–2025)</div>
+            </div>
+            <div class="suffered-right">
+                <strong>Insufficient vaccine coverage</strong> during flood events has repeatedly allowed cholera to spread unchecked in Myanmar's most vulnerable regions. The Ayeyarwady Delta, Rakhine Coast, and Mon State have seen the highest burden.<br><br>
+                Our system calculates the <strong>minimum vaccine doses needed</strong> per region based on at-risk population, flood probability, and past outbreak frequency.
+                <!-- Year-by-year cholera totals (populated by main.js) -->
+                <div class="year-stats" id="year-stats"></div>
+            </div>
+        </div>
+
+        <!-- Per-region supply cards (populated by main.js) -->
+        <div class="supply-grid" id="supply-grid"></div>
+    </div>
+</div>
+
+<!-- Latest news and alerts section -->
+<div class="sec" id="news">
+    <div class="sec-kicker">Latest Alerts</div>
+    <div class="sec-title">RECENT NEWS &amp; ALERTS</div>
+    <!-- News layout populated by main.js -->
+    <div class="news-layout" id="news-layout"></div>
+</div>
+
+<!-- Public safety guidance section -->
+<div class="sec-full" id="safety" style="background:var(--surface2)">
+    <div class="sec-full-inner">
+        <div class="sec-kicker">Public Information</div>
+        <div class="sec-title">HOW TO STAY SAFE</div>
+        <p class="sec-sub">Essential guidance for residents in flood-affected regions. Share this with your community.</p>
+        <!-- Safety cards populated by main.js -->
+        <div class="safety-grid" id="safety-grid"></div>
+    </div>
+</div>
+
+<!-- Travel advisory section -->
+<div class="sec" id="travel">
+    <div class="sec-kicker">For Travellers</div>
+    <div class="sec-title">TRAVEL ADVISORY</div>
+    <p class="sec-sub">Current risk levels by region. Always verify with official government sources before travel.</p>
+    <!-- Travel cards populated by main.js -->
+    <div class="travel-grid" id="travel-grid"></div>
+</div>
+
+<div class="footer">
+    <div class="footer-l">© 2025 FloodGuard Myanmar — Hackathon Project · Model v2.4 · 15 regions</div>
+    <div class="footer-r">Page loaded: <span id="last-updated"></span></div>
+</div>
+
+<!-- App logic (scoring engine, chart rendering, canvas animation) -->
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
 
 </body>
 </html>
